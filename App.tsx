@@ -1,16 +1,15 @@
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, Text, View } from 'react-native';
-import { useStyles } from './styles';
-import Header from './src/app/components/Header/Header';
+import React from 'react';
+import Login from './src/app/components/Pages/login/Login';
+import { GlobalStyle } from './src/app/components/Global/Global';
 
-export default function App() {
 
-  const styles = useStyles();
-
+const App: React.FC = () => {
   return (
-    <SafeAreaView style={styles.container}>
-      <Header />
-    </SafeAreaView>
+    <>
+      <GlobalStyle />
+      <Login />
+    </>
   );
-}
+};
 
+export default App;
