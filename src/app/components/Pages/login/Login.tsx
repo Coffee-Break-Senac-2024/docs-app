@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AuthService from '../../services/AuthService';
 import { 
   Container, 
   LogoContainer, 
@@ -35,11 +36,15 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
       return;
     }
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await AuthService.login(email, password);
       Alert.alert('Login realizado com sucesso!');
       setIsLoggedIn(true);
-    }, 1000);
+    } catch (error: any) {
+      setErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
