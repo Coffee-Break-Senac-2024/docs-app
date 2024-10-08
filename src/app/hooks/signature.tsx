@@ -25,21 +25,15 @@ const SignatureContext = createContext<SignatureContextData>({} as SignatureCont
 const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
     const [data, setData] = useState<UserSignatureResponse>({} as UserSignatureResponse);
     const [loading, setLoading] = useState(false);
-    const [token, setToken] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-
-    useEffect(() => {
-        const getToken = async () => {
-            const token = await AuthService.getToken();
-            setToken(token);
-        }
-        getToken();
-    }, [])
-
+    const getToken = async () => {
+        return await AuthService.getToken();
+    }
 
     const getSignature = useCallback(async () => {
         try {
+            const token = getToken();
             setLoading(true);
             const response = await api.get(`/api/user/signature`, {
                 headers: {
@@ -59,6 +53,7 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
 
     const assignSignature = useCallback(async ({ signatureType }: UserSignatureRequest): Promise<number | undefined> => {
         try {
+            const token = getToken();
             setLoading(true);
             const response = await api.post(`/api/user/signature`, {
                 signatureType
