@@ -1,14 +1,12 @@
 import React from 'react';
-import { Container, Title } from './styles';
+import Layout from '../../pages/Layout/Layout';
 import FolderList from '../../components/Folders/FolderList';
 
 const Home: React.FC = () => {
   return (
-    <Container>
-      <Title>Bem-vindo!</Title>
+    <Layout title="Bem-vindo!">
       <FolderList />
-    </Container>
+    </Layout>
   );
 };
-
 export default Home;

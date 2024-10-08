@@ -1,8 +1,7 @@
-// src/components/FolderList.tsx
 import React, { useEffect, useState } from 'react';
 import { FlatList, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Container, FolderItem, FolderName, ErrorText } from './styles'; // Importando os estilos
+import { Container, FolderItem, FolderName, ErrorText } from './styles';
 
 const FolderList: React.FC = () => {
   const [folders, setFolders] = useState<any[]>([]);
@@ -18,7 +17,7 @@ const FolderList: React.FC = () => {
           { id: '3', name: 'Escola' },
           { id: '4', name: 'Saúde' },
           { id: '5', name: 'Boletos' },
-          { id: '5', name: 'Apostas'},
+          { id: '6', name: 'Apostas'},
         ];
         // Simulando um atraso como se fosse uma requisição
         setTimeout(() => {
@@ -58,6 +57,7 @@ const FolderList: React.FC = () => {
         keyExtractor={(item) => item.id} 
         numColumns={3} 
         columnWrapperStyle={{ justifyContent: 'space-between' }}
+        showsVerticalScrollIndicator={false}
       />
     </Container>
   );

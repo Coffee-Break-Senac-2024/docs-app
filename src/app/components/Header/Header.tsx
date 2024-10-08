@@ -1,12 +1,16 @@
-import { Text } from 'react-native';
-import * as S from './styles';
+import React from 'react';
+import { Header as StyledHeader, Title } from './styles';
 
-export default function Header() {
-    return (
-        <S.Header>
-            <Text>
-                Logo
-            </Text>
-        </S.Header>
-    )
+interface HeaderProps {
+  title: string;
 }
+
+const Header: React.FC<HeaderProps> = ({ title }) => {
+  return (
+    <StyledHeader>
+      <Title>{title}</Title>
+    </StyledHeader>
+  );
+};
+
+export default Header;
