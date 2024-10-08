@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
-import AuthService from "../components/services/AuthService";
+import AuthService from "../components/Services/AuthService";
 import { api } from "../api/auth-api";
 import { AxiosError } from "axios";
 

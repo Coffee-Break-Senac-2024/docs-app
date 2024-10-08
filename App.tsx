@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,6 +7,8 @@ import Profile from './src/app/pages/profile/Profile';
 import Files from './src/app/pages/files/Files';
 import Wallet from './src/app/pages/wallet/Wallet';
 import Login from './src/app/pages/login/Login';
+import EditProfile from './src/app/pages/profile/EditProfile';
+import Plan from './src/app/pages/plans/Plan'
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const Stack = createStackNavigator();
@@ -54,10 +56,14 @@ const App = () => {
     <NavigationContainer>
       <Stack.Navigator>
         {isLoggedIn ? (
-          //se o usuario estiver logado mostra a tela principal com as tabs
-          <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+          // Se o usuário estiver logado, mostra a tela principal com as tabs
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+            <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
+            <Stack.Screen name="Plan" component={Plan} options={{ title: 'Meu Plano' }} />
+          </>
         ) : (
-          //se o usuario não estiver logado  mostra a tela de login
+          // Se o usuário não estiver logado, mostra a tela de login
           <Stack.Screen name="Login">
             {(props) => <Login {...props} setIsLoggedIn={setIsLoggedIn} />}
           </Stack.Screen>

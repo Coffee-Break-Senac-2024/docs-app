@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AuthService from '../../components/services/AuthService';
+import AuthService from '../../components/Services/AuthService';
 import {
   Container,
   LogoContainer,
