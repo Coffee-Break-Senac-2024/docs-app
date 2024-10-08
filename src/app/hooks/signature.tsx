@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import AuthService from "../components/services/AuthService";
-import { api } from "../api/api";
+import { api } from "../api/auth-api";
 import { AxiosError } from "axios";
 
 type UserSignatureResponse = {
