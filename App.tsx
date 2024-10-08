@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Home from './src/app/components/pages/home/Home';
-import Profile from './src/app/components/pages/profile/Profile';
-import Files from './src/app/components/pages/files/Files';
-import Wallet from './src/app/components/pages/wallet/Wallet';
-import Login from './src/app/components/pages/login/Login'; 
+import Home from './src/app/pages/home/Home';
+import Profile from './src/app/pages/profile/Profile';
+import Files from './src/app/pages/files/Files';
+import Wallet from './src/app/pages/wallet/Wallet';
+import Login from './src/app/pages/login/Login';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const Stack = createStackNavigator();
@@ -24,7 +24,7 @@ const MainTabs = () => (
         height: 60,
       },
       tabBarIcon: ({ color, size }) => {
-        let iconName;
+        let iconName: string = '';
 
         if (route.name === 'Home') {
           iconName = 'home-outline';
@@ -48,7 +48,7 @@ const MainTabs = () => (
 );
 
 const App = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
     <NavigationContainer>

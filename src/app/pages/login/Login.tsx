@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AuthService from '../../services/AuthService';
-import { 
-  Container, 
-  LogoContainer, 
-  Logo, 
-  Title, 
-  Input, 
-  ErrorText, 
-  LoginButton, 
-  ButtonText, 
-  ForgotPasswordButton, 
-  ForgotPasswordText 
+import AuthService from '../../components/services/AuthService';
+import {
+  Container,
+  LogoContainer,
+  Logo,
+  Title,
+  Input,
+  ErrorText,
+  LoginButton,
+  ButtonText,
+  ForgotPasswordButton,
+  ForgotPasswordText
 } from './styles';
 
 interface LoginProps {
@@ -50,7 +50,7 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
   return (
     <Container>
       <LogoContainer>
-        <Logo source={require('../../public/images/docs2.png')} />
+        <Logo source={require('../../components/Public/images/docs2.png')} />
       </LogoContainer>
 
       <Title>Bem-vindo(a) ao App Docs</Title>
