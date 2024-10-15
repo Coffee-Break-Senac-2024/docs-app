@@ -71,3 +71,13 @@ export const ForgotPasswordText = styled.Text`
   color: #007bff;
   font-size: 14px;
 `;
+
+export const SignUpButton = styled.Pressable`
+  margin-top: 20px;
+`;
+
+export const SignUpText = styled.Text`
+  color: #007bff;
+  font-size: 14px;
+  text-align: center;
+`;

@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Toast from 'react-native-toast-message';
 import Home from './src/app/pages/home/Home';
 import Profile from './src/app/pages/profile/Profile';
 import Files from './src/app/pages/files/Files';
 import Wallet from './src/app/pages/wallet/Wallet';
 import Login from './src/app/pages/login/Login';
 import EditProfile from './src/app/pages/profile/EditProfile';
-import Plan from './src/app/pages/plans/Plan'
+import Plan from './src/app/pages/plans/Plan';
+import SignUp from './src/app/pages/signUp/SignUp';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { AuthProvider, AuthContext } from './src/app/hooks/auth'; 
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -26,7 +29,7 @@ const MainTabs = () => (
         height: 60,
       },
       tabBarIcon: ({ color, size }) => {
-        let iconName: string = '';
+        let iconName = '';
 
         if (route.name === 'Home') {
           iconName = 'home-outline';
@@ -50,26 +53,28 @@ const MainTabs = () => (
 );
 
 const App = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const { isLoggedIn } = useContext(AuthContext);
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        {isLoggedIn ? (
-          // Se o usuário estiver logado, mostra a tela principal com as tabs
-          <>
-            <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
-            <Stack.Screen name="Plan" component={Plan} options={{ title: 'Meu Plano' }} />
-          </>
-        ) : (
-          // Se o usuário não estiver logado, mostra a tela de login
-          <Stack.Screen name="Login">
-            {(props) => <Login {...props} setIsLoggedIn={setIsLoggedIn} />}
-          </Stack.Screen>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AuthProvider>
+      <NavigationContainer>
+        <Stack.Navigator>
+          {isLoggedIn ? (
+            <>
+              <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+              <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
+              <Stack.Screen name="Plan" component={Plan} options={{ title: 'Meu Plano' }} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="SignUp" component={SignUp} />
+            </>
+          )}
+        </Stack.Navigator>
+        <Toast />
+      </NavigationContainer>
+    </AuthProvider>
   );
 };
 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Alert } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AuthService from '../../components/Services/AuthService';
+import { AuthContext } from '../../hooks/auth';
+import Toast from 'react-native-toast-message';
 import {
   Container,
   LogoContainer,
@@ -12,7 +13,9 @@ import {
   LoginButton,
   ButtonText,
   ForgotPasswordButton,
-  ForgotPasswordText
+  ForgotPasswordText,
+  SignUpButton,
+  SignUpText,
 } from './styles';
 
 interface LoginProps {
@@ -26,6 +29,9 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
+  // Usa o AuthContext para acessar signIn e outros estados
+  const { signIn, error, loading: authLoading } = useContext(AuthContext);
+
   const handleLogin = async () => {
     setErrorMessage('');
     setLoading(true);
@@ -37,14 +43,21 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
     }
 
     try {
-      await AuthService.login(email, password);
-      Alert.alert('Login realizado com sucesso!');
+      await signIn({ email, password });
+      Toast.show({
+        type: 'success',
+        text1: 'Login realizado com sucesso!',
+      });
       setIsLoggedIn(true);
     } catch (error: any) {
-      setErrorMessage(error.message);
+      setErrorMessage(error.message || 'Erro ao fazer login. Tente novamente.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const navigateToSignUp = () => {
+    navigation.navigate('SignUp');
   };
 
   return (
@@ -74,13 +87,17 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
 
       {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
 
-      <LoginButton onPress={handleLogin} disabled={loading}>
-        <ButtonText>{loading ? 'Entrando...' : 'Entrar'}</ButtonText>
+      <LoginButton onPress={handleLogin} disabled={loading || authLoading}>
+        {loading || authLoading ? <ActivityIndicator size="small" color="#fff" /> : <ButtonText>Entrar</ButtonText>}
       </LoginButton>
 
       <ForgotPasswordButton onPress={() => Alert.alert('Recuperação de senha')}>
         <ForgotPasswordText>Esqueceu a senha?</ForgotPasswordText>
       </ForgotPasswordButton>
+
+      <SignUpButton onPress={navigateToSignUp}>
+        <SignUpText>Criar conta</SignUpText>
+      </SignUpButton>
     </Container>
   );
 };
