@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Alert, ActivityIndicator } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../hooks/auth';
 import Toast from 'react-native-toast-message';
@@ -18,19 +18,14 @@ import {
   SignUpText,
 } from './styles';
 
-interface LoginProps {
-  setIsLoggedIn: (loggedIn: boolean) => void;
-}
-
-const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
+const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
-  // Usa o AuthContext para acessar signIn e outros estados
-  const { signIn, error, loading: authLoading } = useContext(AuthContext);
+  const { signIn, error, loading: authLoading, isLoggedIn } = useContext(AuthContext);
 
   const handleLogin = async () => {
     setErrorMessage('');
@@ -44,11 +39,14 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
 
     try {
       await signIn({ email, password });
-      Toast.show({
-        type: 'success',
-        text1: 'Login realizado com sucesso!',
-      });
-      setIsLoggedIn(true);
+
+      if (isLoggedIn) {
+        Toast.show({
+          type: 'success',
+          text1: 'Login realizado com sucesso!',
+        });
+        navigation.navigate('Home');
+      }
     } catch (error: any) {
       setErrorMessage(error.message || 'Erro ao fazer login. Tente novamente.');
     } finally {
@@ -86,12 +84,13 @@ const Login: React.FC<LoginProps> = ({ setIsLoggedIn }) => {
       />
 
       {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
+      {error ? <ErrorText>{error}</ErrorText> : null}
 
       <LoginButton onPress={handleLogin} disabled={loading || authLoading}>
         {loading || authLoading ? <ActivityIndicator size="small" color="#fff" /> : <ButtonText>Entrar</ButtonText>}
       </LoginButton>
 
-      <ForgotPasswordButton onPress={() => Alert.alert('Recuperação de senha')}>
+      <ForgotPasswordButton onPress={() => Toast.show({ type: 'info', text1: 'Recuperação de senha' })}>
         <ForgotPasswordText>Esqueceu a senha?</ForgotPasswordText>
       </ForgotPasswordButton>
 

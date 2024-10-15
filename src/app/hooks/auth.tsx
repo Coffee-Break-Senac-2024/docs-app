@@ -49,15 +49,21 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 email,
                 password
             });
-
-            const { access_token } = response.data;
-            await AsyncStorage.setItem('@docs:token', access_token);
-            setData({ token: access_token });
-            setCachedCredentials({ email, password });
-            setIsLoggedIn(true);
+    
+            if (response.status === 200 || response.status === 201) {
+                const { access_token } = response.data;
+                await AsyncStorage.setItem('@docs:token', access_token);
+                setData({ token: access_token });
+                setCachedCredentials({ email, password });
+                setIsLoggedIn(true);
+            } else {
+                throw new Error('Falha na autenticação.');
+            }
         } catch (error) {
             if (error instanceof AxiosError) {
-                setError(error.response?.data.message);
+                setError(error.response?.data.message || 'Erro ao fazer login. Tente novamente.');
+            } else {
+                setError('Erro desconhecido. Tente novamente.');
             }
         } finally {
             setLoading(false);
