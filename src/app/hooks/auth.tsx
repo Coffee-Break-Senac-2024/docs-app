@@ -15,7 +15,7 @@ interface AuthState {
 interface AuthContextData {
     signIn(credentials: Credentials): Promise<void>;
     signOut(): Promise<void>;
-    signUp(credentials: { name: string; cpf: string; email: string; password: string; }): Promise<void>;
+    signUp(credentials: { name: string; document: string; email: string; password: string; }): Promise<void>;
     isLoggedIn: boolean; 
     loading: boolean;
     error: string | null;
@@ -70,12 +70,12 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, []);
 
-    const signUp = useCallback(async ({ name, cpf, email, password }: { name: string; cpf: string; email: string; password: string; }) => {
+    const signUp = useCallback(async ({ name, document, email, password }: { name: string; document: string; email: string; password: string; }) => {
         try {
             setLoading(true);
-            const response = await api.post(`/api/user/register`, {
+            const response = await api.post(`/api/user/create`, {
                 name,
-                cpf,
+                document,
                 email,
                 password
             });

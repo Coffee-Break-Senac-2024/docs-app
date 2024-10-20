@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import Toast from 'react-native-toast-message';
 import { useNavigation } from '@react-navigation/native'; 
 import { TextInputMask } from 'react-native-masked-text';
@@ -12,7 +12,6 @@ import {
   ErrorText,
 } from './styles';
 
-// Validações
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const isValidPassword = (password) => {
@@ -51,6 +50,10 @@ const SignUp = () => {
 
   const navigation = useNavigation();
 
+  useEffect(() => {
+    setErrorMessage('');
+  }, []);
+
   const handleRegister = async () => {
     setErrorMessage(''); 
 
@@ -72,13 +75,14 @@ const SignUp = () => {
     }
 
     const cleanedCpf = removeCpfMask(cpf);
-
+    
     try {
-      await signUp({ name, cpf: cleanedCpf, email, password });
-       
+      setErrorMessage('');
+      await signUp({ name, document: cleanedCpf, email, password });
+
       Toast.show({
         type: 'success',
-        text1: 'Cadastro realizado com sucesso! Efetue o Login.',
+        text1: 'Cadastro realizado com sucesso!.',
       });
 
       navigation.navigate('Login');  
@@ -87,7 +91,7 @@ const SignUp = () => {
 
       Toast.show({
         type: 'error',
-        text1: 'Erro ao realizar cadastro! Tente Novamente.',
+        text1: 'Erro ao realizar cadastro! Tente novamente.',
       });
 
       setErrorMessage(errorMsg);
