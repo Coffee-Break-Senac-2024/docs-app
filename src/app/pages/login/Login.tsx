@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../hooks/auth';
@@ -39,20 +39,23 @@ const Login: React.FC = () => {
 
     try {
       await signIn({ email, password });
-
-      if (isLoggedIn) {
-        Toast.show({
-          type: 'success',
-          text1: 'Login realizado com sucesso!',
-        });
-        navigation.navigate('Home');
-      }
+     
     } catch (error: any) {
       setErrorMessage(error.message || 'Erro ao fazer login. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      Toast.show({
+        type: 'success',
+        text1: 'Login realizado com sucesso!',
+      });
+      navigation.navigate('MainTabs'); 
+    }
+  }, [isLoggedIn]);
 
   const navigateToSignUp = () => {
     navigation.navigate('SignUp');

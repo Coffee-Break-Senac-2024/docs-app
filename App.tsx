@@ -2,28 +2,30 @@ import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Icon from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
+
 import Home from './src/app/pages/home/Home';
 import Profile from './src/app/pages/profile/Profile';
 import Files from './src/app/pages/files/Files';
 import Wallet from './src/app/pages/wallet/Wallet';
 import Login from './src/app/pages/login/Login';
+import SignUp from './src/app/pages/signUp/SignUp';
 import EditProfile from './src/app/pages/profile/EditProfile';
 import Plan from './src/app/pages/plans/Plan';
-import SignUp from './src/app/pages/signUp/SignUp';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { AuthProvider, AuthContext } from './src/app/hooks/auth'; 
+
+import { AuthProvider, AuthContext } from './src/app/hooks/auth';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const MainTabs = () => (
+const AuthenticatedTabs = () => (
   <Tab.Navigator
     initialRouteName="Home"
     screenOptions={({ route }) => ({
-      headerShown: false,
       tabBarActiveTintColor: '#004aad',
       tabBarInactiveTintColor: '#888',
+      headerShown: false,
       tabBarStyle: {
         paddingBottom: 10,
         height: 60,
@@ -52,26 +54,32 @@ const MainTabs = () => (
   </Tab.Navigator>
 );
 
-const App = () => {
+const AppNavigator = () => {
   const { isLoggedIn } = useContext(AuthContext);
 
   return (
+    <Stack.Navigator>
+      {isLoggedIn ? (
+        <>
+          <Stack.Screen name="AuthenticatedTabs" component={AuthenticatedTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
+          <Stack.Screen name="Plan" component={Plan} options={{ title: 'Meu Plano' }} />
+        </>
+      ) : (
+        <>
+          <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+          <Stack.Screen name="SignUp" component={SignUp} options={{ title: 'Cadastrar-se' }} />
+        </>
+      )}
+    </Stack.Navigator>
+  );
+};
+
+const App = () => {
+  return (
     <AuthProvider>
       <NavigationContainer>
-        <Stack.Navigator>
-          {isLoggedIn ? (
-            <>
-              <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-              <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
-              <Stack.Screen name="Plan" component={Plan} options={{ title: 'Meu Plano' }} />
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="Login" component={Login} />
-              <Stack.Screen name="SignUp" component={SignUp} />
-            </>
-          )}
-        </Stack.Navigator>
+        <AppNavigator />
         <Toast />
       </NavigationContainer>
     </AuthProvider>

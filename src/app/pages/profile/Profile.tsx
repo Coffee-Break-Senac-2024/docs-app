@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import AuthService from '../../components/Services/AuthService';
+import { AuthContext } from '../../hooks/auth';
 import { Container, Title, Button, ButtonText } from './styles';
 import Header from '../../components/Header/Header';
 
 const Profile: React.FC = () => {
   const navigation = useNavigation();
+  const { signOut } = useContext(AuthContext); 
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfile');
@@ -17,8 +18,7 @@ const Profile: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await AuthService.logout();
-      navigation.navigate('Login');
+      await signOut(); 
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }
