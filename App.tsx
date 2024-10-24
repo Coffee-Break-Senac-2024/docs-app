@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -13,8 +13,10 @@ import Login from './src/app/pages/login/Login';
 import SignUp from './src/app/pages/signUp/SignUp';
 import EditProfile from './src/app/pages/profile/EditProfile';
 import Plan from './src/app/pages/plans/Plan';
+import PlanSelection from './src/app/pages/plans/PlanSelection';
 
 import { AuthProvider, AuthContext } from './src/app/hooks/auth';
+import { SignatureProvider, useSignature } from './src/app/hooks/signature';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -56,15 +58,25 @@ const AuthenticatedTabs = () => (
 
 const AppNavigator = () => {
   const { isLoggedIn } = useContext(AuthContext);
+  const { getSignature, userSignature } = useSignature(); 
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      getSignature();
+    }
+  }, [isLoggedIn]);
 
   return (
     <Stack.Navigator>
       {isLoggedIn ? (
-        <>
-          <Stack.Screen name="AuthenticatedTabs" component={AuthenticatedTabs} options={{ headerShown: false }} />
-          <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
-          <Stack.Screen name="Plan" component={Plan} options={{ title: 'Meu Plano' }} />
-        </>
+        userSignature.signatureType ? (
+          <>
+            <Stack.Screen name="AuthenticatedTabs" component={AuthenticatedTabs} options={{ headerShown: false }} />
+            <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
+          </>
+        ) : (
+          <Stack.Screen name="PlanSelection" component={PlanSelection} options={{ title: 'Escolha um Plano' }} />
+        )
       ) : (
         <>
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
@@ -78,10 +90,12 @@ const AppNavigator = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <AppNavigator />
-        <Toast />
-      </NavigationContainer>
+      <SignatureProvider>
+        <NavigationContainer>
+          <AppNavigator />
+          <Toast />
+        </NavigationContainer>
+      </SignatureProvider>
     </AuthProvider>
   );
 };

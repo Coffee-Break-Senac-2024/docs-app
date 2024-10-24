@@ -2,6 +2,7 @@ import { createContext, useCallback, useState, useEffect } from "react";
 import { api } from "../api/auth-api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AxiosError } from "axios";
+import { useSignature } from './signature'; 
 
 interface Credentials {
     email: string;
@@ -30,6 +31,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [error, setError] = useState<string | null>(null);
     const [cachedCredentials, setCachedCredentials] = useState<Credentials>({} as Credentials);
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);  
+    const { getSignature } = useSignature();
 
     useEffect(() => {
         const loadStorageData = async () => {
@@ -37,6 +39,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (token) {
                 setData({ token });
                 setIsLoggedIn(true);
+
+                await getSignature();
             }
         };
         loadStorageData();
@@ -56,6 +60,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setData({ token: access_token });
                 setCachedCredentials({ email, password });
                 setIsLoggedIn(true);
+
+                await getSignature();
             } else {
                 throw new Error('Falha na autenticação.');
             }
