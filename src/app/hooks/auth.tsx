@@ -16,7 +16,7 @@ interface AuthContextData {
     signIn(credentials: Credentials): Promise<void>;
     signOut(): Promise<void>;
     signUp(credentials: { name: string; document: string; email: string; password: string; }): Promise<void>;
-    isLoggedIn: boolean; 
+    isLoggedIn: boolean;
     loading: boolean;
     error: string | null;
     cachedCredentials: Credentials;
@@ -29,7 +29,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [cachedCredentials, setCachedCredentials] = useState<Credentials>({} as Credentials);
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);  
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
     useEffect(() => {
         const loadStorageData = async () => {
@@ -49,7 +49,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 email,
                 password
             });
-    
+
             if (response.status === 200 || response.status === 201) {
                 const { access_token } = response.data;
                 await AsyncStorage.setItem('@docs:token', access_token);
@@ -79,7 +79,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 email,
                 password
             });
-    
+
             if (response.status === 200 || response.status === 201) {
                 const { access_token } = response.data;
                 await AsyncStorage.setItem('@docs:token', access_token);

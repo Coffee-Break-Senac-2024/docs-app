@@ -1,10 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
-import AuthService from "../components/Services/AuthService";
-import { api } from "../api/auth-api";
+import AuthService from "../components/services/AuthService";
+import { signatureApi } from "../api/auth-api";
 import { AxiosError } from "axios";
 
-type UserSignatureResponse = {
+interface UserSignatureResponse {
     signatureType: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL',
     signetAt: string,
     documentCount: number
@@ -33,15 +33,18 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
 
     const getSignature = useCallback(async () => {
         try {
-            const token = getToken();
+            const token = await getToken();
+            console.log(token, 'token');
             setLoading(true);
-            const response = await api.get(`/api/user/signature`, {
+            const response = await signatureApi.get(`/api/user/signature`, {
                 headers: {
+                    "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`
                 }
             });
 
-            setData(response.data);
+            console.log(response.data, 'response');
+            setData({ signatureType: response.data.signature, signetAt: response.data.signetAt, documentCount: response.data.documentCount });
         } catch (error) {
             if (error instanceof AxiosError) {
                 setError(error.response?.data.message || 'Erro ao buscar assinatura');
@@ -55,7 +58,7 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const token = getToken();
             setLoading(true);
-            const response = await api.post(`/api/user/signature`, {
+            const response = await signatureApi.post(`/api/user/signature`, {
                 signatureType
             }, {
                 headers: {

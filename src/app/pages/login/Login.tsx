@@ -4,104 +4,104 @@ import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../hooks/auth';
 import Toast from 'react-native-toast-message';
 import {
-  Container,
-  LogoContainer,
-  Logo,
-  Title,
-  Input,
-  ErrorText,
-  LoginButton,
-  ButtonText,
-  ForgotPasswordButton,
-  ForgotPasswordText,
-  SignUpButton,
-  SignUpText,
+    Container,
+    LogoContainer,
+    Logo,
+    Title,
+    Input,
+    ErrorText,
+    LoginButton,
+    ButtonText,
+    ForgotPasswordButton,
+    ForgotPasswordText,
+    SignUpButton,
+    SignUpText,
 } from './styles';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();
+    const { signIn, error, loading: authLoading, isLoggedIn } = useContext(AuthContext);
 
-  const { signIn, error, loading: authLoading, isLoggedIn } = useContext(AuthContext);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+    const navigation = useNavigation();
 
-  const handleLogin = async () => {
-    setErrorMessage('');
-    setLoading(true);
+    const handleLogin = async () => {
+        setErrorMessage('');
+        setLoading(true);
 
-    if (!email || !password) {
-      setErrorMessage('Por favor, insira o email e a senha.');
-      setLoading(false);
-      return;
-    }
+        if (!email || !password) {
+            setErrorMessage('Por favor, insira o email e a senha.');
+            setLoading(false);
+            return;
+        }
 
-    try {
-      await signIn({ email, password });
-     
-    } catch (error: any) {
-      setErrorMessage(error.message || 'Erro ao fazer login. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
+        try {
+            await signIn({ email, password });
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      Toast.show({
-        type: 'success',
-        text1: 'Login realizado com sucesso!',
-      });
-      navigation.navigate('MainTabs'); 
-    }
-  }, [isLoggedIn]);
+        } catch (error: any) {
+            setErrorMessage(error.message || 'Erro ao fazer login. Tente novamente.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const navigateToSignUp = () => {
-    navigation.navigate('SignUp');
-  };
+    useEffect(() => {
+        if (isLoggedIn) {
+            Toast.show({
+                type: 'success',
+                text1: 'Login realizado com sucesso!',
+            });
+            navigation.navigate('MainTabs');
+        }
+    }, [isLoggedIn]);
 
-  return (
-    <Container>
-      <LogoContainer>
-        <Logo source={require('../../components/Public/images/docs2.png')} />
-      </LogoContainer>
+    const navigateToSignUp = () => {
+        navigation.navigate('SignUp');
+    };
 
-      <Title>Bem-vindo(a) ao App Docs</Title>
+    return (
+        <Container>
+            <LogoContainer>
+                <Logo source={require('../../components/Public/images/docs2.png')} />
+            </LogoContainer>
 
-      <Input
-        placeholder="Email"
-        placeholderTextColor="#888"
-        value={email}
-        onChangeText={setEmail}
-        inputMode="email"
-        autoCapitalize="none"
-      />
+            <Title>Bem-vindo(a) ao App Docs</Title>
 
-      <Input
-        placeholder="Senha"
-        placeholderTextColor="#888"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+            <Input
+                placeholder="Email"
+                placeholderTextColor="#888"
+                value={email}
+                onChangeText={(e) => setEmail(e)}
+                inputMode="email"
+                autoCapitalize="none"
+            />
 
-      {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
-      {error ? <ErrorText>{error}</ErrorText> : null}
+            <Input
+                placeholder="Senha"
+                placeholderTextColor="#888"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+            />
 
-      <LoginButton onPress={handleLogin} disabled={loading || authLoading}>
-        {loading || authLoading ? <ActivityIndicator size="small" color="#fff" /> : <ButtonText>Entrar</ButtonText>}
-      </LoginButton>
+            {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
+            {error ? <ErrorText>{error}</ErrorText> : null}
 
-      <ForgotPasswordButton onPress={() => Toast.show({ type: 'info', text1: 'Recuperação de senha' })}>
-        <ForgotPasswordText>Esqueceu a senha?</ForgotPasswordText>
-      </ForgotPasswordButton>
+            <LoginButton onPress={handleLogin} disabled={loading || authLoading}>
+                {loading || authLoading ? <ActivityIndicator size="small" color="#fff" /> : <ButtonText>Entrar</ButtonText>}
+            </LoginButton>
 
-      <SignUpButton onPress={navigateToSignUp}>
-        <SignUpText>Criar conta</SignUpText>
-      </SignUpButton>
-    </Container>
-  );
+            <ForgotPasswordButton onPress={() => Toast.show({ type: 'info', text1: 'Recuperação de senha' })}>
+                <ForgotPasswordText>Esqueceu a senha?</ForgotPasswordText>
+            </ForgotPasswordButton>
+
+            <SignUpButton onPress={navigateToSignUp}>
+                <SignUpText>Criar conta</SignUpText>
+            </SignUpButton>
+        </Container>
+    );
 };
 
 export default Login;

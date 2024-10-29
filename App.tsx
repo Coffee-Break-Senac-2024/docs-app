@@ -15,75 +15,78 @@ import EditProfile from './src/app/pages/profile/EditProfile';
 import Plan from './src/app/pages/plans/Plan';
 
 import { AuthProvider, AuthContext } from './src/app/hooks/auth';
+import { SignatureProvider } from './src/app/hooks/signature';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const AuthenticatedTabs = () => (
-  <Tab.Navigator
-    initialRouteName="Home"
-    screenOptions={({ route }) => ({
-      tabBarActiveTintColor: '#004aad',
-      tabBarInactiveTintColor: '#888',
-      headerShown: false,
-      tabBarStyle: {
-        paddingBottom: 10,
-        height: 60,
-      },
-      tabBarIcon: ({ color, size }) => {
-        let iconName = '';
+    <Tab.Navigator
+        initialRouteName="Home"
+        screenOptions={({ route }) => ({
+            tabBarActiveTintColor: '#004aad',
+            tabBarInactiveTintColor: '#888',
+            headerShown: false,
+            tabBarStyle: {
+                paddingBottom: 10,
+                height: 60,
+            },
+            tabBarIcon: ({ color, size }) => {
+                let iconName = '';
 
-        if (route.name === 'Home') {
-          iconName = 'home-outline';
-        } else if (route.name === 'Profile') {
-          iconName = 'person-outline';
-        } else if (route.name === 'Files') {
-          iconName = 'folder-outline';
-        } else if (route.name === 'Wallet') {
-          iconName = 'wallet-outline';
-        }
+                if (route.name === 'Home') {
+                    iconName = 'home-outline';
+                } else if (route.name === 'Profile') {
+                    iconName = 'person-outline';
+                } else if (route.name === 'Files') {
+                    iconName = 'folder-outline';
+                } else if (route.name === 'Wallet') {
+                    iconName = 'wallet-outline';
+                }
 
-        return <Icon name={iconName} size={size} color={color} />;
-      },
-    })}
-  >
-    <Tab.Screen name="Home" component={Home} options={{ title: 'Início' }} />
-    <Tab.Screen name="Files" component={Files} options={{ title: 'Meus Arquivos' }} />
-    <Tab.Screen name="Wallet" component={Wallet} options={{ title: 'Carteira' }} />
-    <Tab.Screen name="Profile" component={Profile} options={{ title: 'Perfil' }} />
-  </Tab.Navigator>
+                return <Icon name={iconName} size={size} color={color} />;
+            },
+        })}
+    >
+        <Tab.Screen name="Home" component={Home} options={{ title: 'Início' }} />
+        <Tab.Screen name="Files" component={Files} options={{ title: 'Meus Arquivos' }} />
+        <Tab.Screen name="Wallet" component={Wallet} options={{ title: 'Carteira' }} />
+        <Tab.Screen name="Profile" component={Profile} options={{ title: 'Perfil' }} />
+    </Tab.Navigator>
 );
 
 const AppNavigator = () => {
-  const { isLoggedIn } = useContext(AuthContext);
+    const { isLoggedIn } = useContext(AuthContext);
 
-  return (
-    <Stack.Navigator>
-      {isLoggedIn ? (
-        <>
-          <Stack.Screen name="AuthenticatedTabs" component={AuthenticatedTabs} options={{ headerShown: false }} />
-          <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
-          <Stack.Screen name="Plan" component={Plan} options={{ title: 'Meu Plano' }} />
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
-          <Stack.Screen name="SignUp" component={SignUp} options={{ title: 'Cadastrar-se' }} />
-        </>
-      )}
-    </Stack.Navigator>
-  );
+    return (
+        <Stack.Navigator>
+            {isLoggedIn ? (
+                <>
+                    <Stack.Screen name="AuthenticatedTabs" component={AuthenticatedTabs} options={{ headerShown: false }} />
+                    <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
+                    <Stack.Screen name="Plan" component={Plan} options={{ title: 'Meu Plano' }} />
+                </>
+            ) : (
+                <>
+                    <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+                    <Stack.Screen name="SignUp" component={SignUp} options={{ title: 'Cadastrar-se' }} />
+                </>
+            )}
+        </Stack.Navigator>
+    );
 };
 
 const App = () => {
-  return (
-    <AuthProvider>
-      <NavigationContainer>
-        <AppNavigator />
-        <Toast />
-      </NavigationContainer>
-    </AuthProvider>
-  );
+    return (
+        <AuthProvider>
+            <SignatureProvider>
+                <NavigationContainer>
+                    <AppNavigator />
+                    <Toast />
+                </NavigationContainer>
+            </SignatureProvider>
+        </AuthProvider>
+    );
 };
 
 export default App;
