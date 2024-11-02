@@ -79,9 +79,9 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
                 if (!token) {
                     throw new Error('Token de autenticação não encontrado');
                 }
-
+    
                 const response = await signatureApi.post(
-                    `/api/user/signature`,
+                    '/api/user/signature/assign', 
                     { signatureType },
                     {
                         headers: {
@@ -89,6 +89,7 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
                         },
                     }
                 );
+    
                 console.log("STATUS:::" + response.status);
                 return response.status;
             } catch (error) {
@@ -96,6 +97,7 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
                     setError(error.response?.data.message || 'Erro ao atribuir assinatura');
                     return error.response?.status || 500;
                 }
+                setError('Erro desconhecido ao atribuir assinatura.');
                 return 500;
             } finally {
                 setLoading(false);
