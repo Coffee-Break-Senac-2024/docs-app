@@ -5,31 +5,32 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type UserSignatureResponse = {
     signatureType: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
-    signetAt: string;
+    signedAt: string;
     documentCount: number;
-}
+} | null; 
 
 interface UserSignatureRequest {
     signatureType: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
 }
 
 interface SignatureContextData {
-    userSignature: UserSignatureResponse;
+    userSignature: UserSignatureResponse; 
     getSignature: () => Promise<void>;
     assignSignature: (data: UserSignatureRequest) => Promise<number | undefined>;
+    error: string | null; 
 }
 
 const SignatureContext = createContext<SignatureContextData>({} as SignatureContextData);
 
 const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
-    const [data, setData] = useState<UserSignatureResponse>({} as UserSignatureResponse);
+    const [data, setData] = useState<UserSignatureResponse>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const getToken = async (): Promise<string | null> => {
         try {
             const token = await AsyncStorage.getItem('@docs:token');
-            console.log("TOKEEEEN: " + token)
+            console.log("TOKEEEEN: " + token);
             return token;
         } catch (error) {
             console.error('Erro ao obter o token do AsyncStorage:', error);
@@ -41,31 +42,35 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             setLoading(true);
             const token = await getToken();
-            console.log("TOKEEEEN 2: " + token)
+    
             if (!token) {
                 throw new Error('Token de autenticação não encontrado');
             }
-            console.log("DAAAAAAAAAATTTTTTAAAAAAA" + response)
+    
             const response = await signatureApi.get('/api/user/signature', {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
-
-            console.log("DAAAAAAAAAATTTTTTAAAAAAA" + response)
-
-            setData(response.data);
+    
+            console.log("STATUS:::" + response.status);
+            if (response.status === 200) {
+                setData(response.data);
+                setError(null);
+            } else {
+                setData(null); 
+            }
         } catch (error) {
             if (error instanceof AxiosError) {
-                setError(error.response?.data.message || 'Erro ao buscar assinatura');
+                setData(null);
             } else {
-                setError('Erro desconhecido ao buscar assinatura.');
+                setData(null);
             }
         } finally {
             setLoading(false);
         }
     }, []);
-
+    
     const assignSignature = useCallback(
         async ({ signatureType }: UserSignatureRequest): Promise<number | undefined> => {
             try {
@@ -84,14 +89,13 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
                         },
                     }
                 );
-
+                console.log("STATUS:::" + response.status);
                 return response.status;
             } catch (error) {
                 if (error instanceof AxiosError) {
                     setError(error.response?.data.message || 'Erro ao atribuir assinatura');
                     return error.response?.status || 500;
                 }
-                setError('Erro desconhecido ao atribuir assinatura.');
                 return 500;
             } finally {
                 setLoading(false);
@@ -101,7 +105,7 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     return (
-        <SignatureContext.Provider value={{ userSignature: data, getSignature, assignSignature }}>
+        <SignatureContext.Provider value={{ userSignature: data, getSignature, assignSignature, error }}>
             {children}
         </SignatureContext.Provider>
     );

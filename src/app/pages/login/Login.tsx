@@ -9,7 +9,6 @@ import {
   Logo,
   Title,
   Input,
-  ErrorText,
   LoginButton,
   ButtonText,
   ForgotPasswordButton,
@@ -25,14 +24,17 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
-  const { signIn, error, loading: authLoading, isLoggedIn } = useContext(AuthContext);
+  const { signIn, loading: authLoading, isLoggedIn } = useContext(AuthContext);
 
   const handleLogin = async () => {
     setErrorMessage('');
     setLoading(true);
 
     if (!email || !password) {
-      setErrorMessage('Por favor, insira o email e a senha.');
+      Toast.show({
+        type: 'error',
+        text1: 'Por favor, insira o email e a senha.',
+      });
       setLoading(false);
       return;
     }
@@ -41,7 +43,10 @@ const Login: React.FC = () => {
       await signIn({ email, password });
      
     } catch (error: any) {
-      setErrorMessage(error.message || 'Erro ao fazer login. Tente novamente.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao fazer login. Tente novamente.',
+      });
     } finally {
       setLoading(false);
     }
@@ -85,9 +90,6 @@ const Login: React.FC = () => {
         onChangeText={setPassword}
         secureTextEntry
       />
-
-      {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
-      {error ? <ErrorText>{error}</ErrorText> : null}
 
       <LoginButton onPress={handleLogin} disabled={loading || authLoading}>
         {loading || authLoading ? <ActivityIndicator size="small" color="#fff" /> : <ButtonText>Entrar</ButtonText>}
