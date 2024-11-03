@@ -4,7 +4,7 @@ import { AxiosError } from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 type UserSignatureResponse = {
-    signatureType: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+    signature: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
     signedAt: string;
     documentCount: number;
 } | null; 
@@ -53,7 +53,8 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
                 },
             });
     
-            console.log("STATUS:::" + response.status);
+            console.log("STATUS:::", JSON.stringify(response.data, null, 2));
+
             if (response.status === 200) {
                 setData(response.data);
                 setError(null);
