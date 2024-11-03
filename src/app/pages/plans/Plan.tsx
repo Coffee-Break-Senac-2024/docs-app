@@ -78,7 +78,7 @@ const Plan: React.FC = () => {
         <Card>
           <CardTitle>Plano Atual: {userSignature.signature}</CardTitle>
           <CardDescription>Início: {new Date(userSignature.signedAt).toLocaleDateString()}</CardDescription>
-          <CardDescription>Documentos disponíveis: {userSignature.documentCount}</CardDescription>
+          <CardDescription>Documentos Cadastrados: {userSignature.documentCount}</CardDescription>
         </Card>
       ) : (
         <Description>Carregando informações do plano atual...</Description>

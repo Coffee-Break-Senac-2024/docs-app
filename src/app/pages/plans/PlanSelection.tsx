@@ -2,11 +2,11 @@ import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSignature } from '../../hooks/signature';
 import Toast from 'react-native-toast-message';
-import { AuthContext } from '../../hooks/auth'; // Importar o AuthContext para o logout
+import { AuthContext } from '../../hooks/auth'; 
 
 const PlanSelection: React.FC = () => {
     const { userSignature, getSignature, assignSignature } = useSignature();
-    const { signOut } = useContext(AuthContext); // Pegar o método de logout do AuthContext
+    const { signOut } = useContext(AuthContext);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
     useEffect(() => {
@@ -34,7 +34,7 @@ const PlanSelection: React.FC = () => {
     };
 
     const handleLogout = async () => {
-        await signOut(); // Executa o logout
+        await signOut(); 
         Toast.show({ type: 'info', text1: 'Você foi desconectado!' });
     };
 

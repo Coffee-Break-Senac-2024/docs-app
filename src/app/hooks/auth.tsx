@@ -14,9 +14,9 @@ interface AuthState {
 }
 
 interface AuthContextData {
-    signIn(credentials: Credentials): Promise<void>;
+    signIn(credentials: Credentials): Promise<number>;
     signOut(): Promise<void>;
-    signUp(credentials: { name: string; document: string; email: string; password: string; }): Promise<void>;
+    signUp(credentials: { name: string; document: string; email: string; password: string; }): Promise<number>;
     isLoggedIn: boolean; 
     loading: boolean;
     error: string | null;
@@ -39,20 +39,17 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (token) {
                 setData({ token });
                 setIsLoggedIn(true);
-
                 await getSignature();
             }
         };
         loadStorageData();
     }, []);
 
-    const signIn = useCallback(async ({ email, password }: Credentials) => {
+    const signIn = useCallback(async ({ email, password }: Credentials): Promise<number> => {
+        setError(null);
         try {
             setLoading(true);
-            const response = await api.post(`/api/user/auth`, {
-                email,
-                password
-            });
+            const response = await api.post(`/api/user/auth`, { email, password });
     
             if (response.status === 200 || response.status === 201) {
                 const { access_token } = response.data;
@@ -60,31 +57,29 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setData({ token: access_token });
                 setCachedCredentials({ email, password });
                 setIsLoggedIn(true);
-
                 await getSignature();
+                return response.status;
             } else {
                 throw new Error('Falha na autenticação.');
             }
         } catch (error) {
             if (error instanceof AxiosError) {
                 setError(error.response?.data.message || 'Erro ao fazer login. Tente novamente.');
+                return error.response?.status || 500;
             } else {
                 setError('Erro desconhecido. Tente novamente.');
+                return 500;
             }
         } finally {
             setLoading(false);
         }
-    }, []);
-
-    const signUp = useCallback(async ({ name, document, email, password }: { name: string; document: string; email: string; password: string; }) => {
+    }, [getSignature]);
+    
+    const signUp = useCallback(async ({ name, document, email, password }: { name: string; document: string; email: string; password: string; }): Promise<number> => {
+        setError(null);
         try {
             setLoading(true);
-            const response = await api.post(`/api/user/create`, {
-                name,
-                document,
-                email,
-                password
-            });
+            const response = await api.post(`/api/user/create`, { name, document, email, password });
     
             if (response.status === 200 || response.status === 201) {
                 const { access_token } = response.data;
@@ -92,20 +87,23 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setData({ token: access_token });
                 setCachedCredentials({ email, password });
                 setIsLoggedIn(true);
+                return response.status;
             } else {
                 throw new Error('Erro ao tentar cadastrar.');
             }
         } catch (error) {
             if (error instanceof AxiosError) {
                 setError(error.response?.data.message || 'Erro ao cadastrar. Tente novamente.');
+                return error.response?.status || 500;
             } else {
                 setError('Erro desconhecido. Tente novamente.');
+                return 500;
             }
         } finally {
             setLoading(false);
         }
     }, []);
-
+    
     const signOut = useCallback(async () => {
         await AsyncStorage.removeItem('@docs:token');
         setData({} as AuthState);
