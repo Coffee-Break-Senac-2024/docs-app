@@ -13,6 +13,7 @@ import Login from './src/app/pages/login/Login';
 import SignUp from './src/app/pages/signUp/SignUp';
 import EditProfile from './src/app/pages/profile/EditProfile';
 import PlanSelection from './src/app/pages/plans/PlanSelection';
+import Plan from './src/app/pages/plans/Plan';
 
 import { AuthProvider, AuthContext } from './src/app/hooks/auth';
 import { SignatureProvider, useSignature } from './src/app/hooks/signature';
@@ -73,6 +74,7 @@ const AppNavigator = () => {
           <>
             <Stack.Screen name="AuthenticatedTabs" component={AuthenticatedTabs} options={{ headerShown: false }} />
             <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
+            <Stack.Screen name="Plan" component={Plan} options={{ title: 'Alterar Plano' }} />
           </>
         ) : (
           <Stack.Screen name="PlanSelection" component={PlanSelection} options={{ title: 'Escolha um Plano' }} />

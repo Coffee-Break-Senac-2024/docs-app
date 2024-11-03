@@ -17,6 +17,7 @@ interface SignatureContextData {
     userSignature: UserSignatureResponse; 
     getSignature: () => Promise<void>;
     assignSignature: (data: UserSignatureRequest) => Promise<number | undefined>;
+    changeSignaturePlan: (data: UserSignatureRequest) => Promise<number | undefined>; // Novo método
     error: string | null; 
 }
 
@@ -107,8 +108,49 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
         []
     );
 
+   
+    const changeSignaturePlan = useCallback(
+        async ({ signatureType }: UserSignatureRequest): Promise<number | undefined> => {
+            try {
+                setLoading(true);
+                const token = await getToken();
+                if (!token) {
+                    throw new Error('Token de autenticação não encontrado');
+                }
+
+                const response = await signatureApi.put(
+                    '/api/user/signature/change', 
+                    { signatureType },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (response.status === 200) {
+                    setData(response.data); 
+                    setError(null);
+                }
+
+                console.log("Plano alterado com sucesso:", response.data);
+                return response.status;
+            } catch (error) {
+                if (error instanceof AxiosError) {
+                    setError(error.response?.data.message || 'Erro ao alterar assinatura');
+                    return error.response?.status || 500;
+                }
+                setError('Erro desconhecido ao alterar assinatura.');
+                return 500;
+            } finally {
+                setLoading(false);
+            }
+        },
+        []
+    );
+
     return (
-        <SignatureContext.Provider value={{ userSignature: data, getSignature, assignSignature, error }}>
+        <SignatureContext.Provider value={{ userSignature: data, getSignature, assignSignature, changeSignaturePlan, error }}>
             {children}
         </SignatureContext.Provider>
     );
