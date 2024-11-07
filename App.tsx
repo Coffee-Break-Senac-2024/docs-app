@@ -1,4 +1,5 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -15,11 +16,11 @@ import EditProfile from './src/app/pages/profile/EditProfile';
 import PlanSelection from './src/app/pages/plans/PlanSelection';
 import Plan from './src/app/pages/plans/Plan';
 import WalletDisplay from './src/app/pages/wallet/WalletDisplay';
-import DocumentCreate from './src/app/pages/wallet/WalletCreate'
+import DocumentCreate from './src/app/pages/wallet/WalletCreate';
 
 import { AuthProvider, AuthContext } from './src/app/hooks/auth';
 import { SignatureProvider, useSignature } from './src/app/hooks/signature';
-import { WalletProvider, useWallet } from './src/app/hooks/wallet';
+import { WalletProvider } from './src/app/hooks/wallet';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -60,15 +61,28 @@ const AuthenticatedTabs = () => (
 const AppNavigator = () => {
   const { isLoggedIn } = useContext(AuthContext);
   const { getSignature, userSignature } = useSignature();
+  const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
     const fetchSignature = async () => {
       if (isLoggedIn) {
+        setLoading(true); 
         await getSignature();
+        setLoading(false); 
+      } else {
+        setLoading(false);
       }
     };
     fetchSignature();
   }, [isLoggedIn, getSignature]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#004aad" />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator>
