@@ -11,7 +11,7 @@ const Wallet: React.FC = () => {
       <View style={styles.buttonContainer}>
         <Button
           title="Exibir Documento"
-          onPress={() => navigation.navigate('DocumentDisplay')}
+          onPress={() => navigation.navigate('WalletDisplay')}
         />
         <Button
           title="Cadastrar Documento"

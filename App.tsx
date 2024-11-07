@@ -14,7 +14,7 @@ import SignUp from './src/app/pages/signUp/SignUp';
 import EditProfile from './src/app/pages/profile/EditProfile';
 import PlanSelection from './src/app/pages/plans/PlanSelection';
 import Plan from './src/app/pages/plans/Plan';
-import DocumentDisplay from './src/app/pages/wallet/documentDisplay';
+import WalletDisplay from './src/app/pages/wallet/WalletDisplay';
 import DocumentCreate from './src/app/pages/wallet/WalletCreate'
 
 import { AuthProvider, AuthContext } from './src/app/hooks/auth';
@@ -78,7 +78,7 @@ const AppNavigator = () => {
             <Stack.Screen name="AuthenticatedTabs" component={AuthenticatedTabs} options={{ headerShown: false }} />
             <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
             <Stack.Screen name="Plan" component={Plan} options={{ title: 'Alterar Plano' }} />
-            <Stack.Screen name="DocumentDisplay" component={DocumentDisplay} options={{ title: 'Exibir Documento' }} />
+            <Stack.Screen name="WalletDisplay" component={WalletDisplay} options={{ title: 'Exibir Documento' }} />
             <Stack.Screen name="DocumentCreate" component={DocumentCreate} options={{ title: 'Cadastrar Documento' }} />
           </>
         ) : (
