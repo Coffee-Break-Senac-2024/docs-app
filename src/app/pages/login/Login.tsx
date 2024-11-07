@@ -9,7 +9,6 @@ import {
     Logo,
     Title,
     Input,
-    ErrorText,
     LoginButton,
     ButtonText,
     ForgotPasswordButton,
@@ -19,29 +18,70 @@ import {
 } from './styles';
 
 const Login: React.FC = () => {
-    const { signIn, error, loading: authLoading, isLoggedIn } = useContext(AuthContext);
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const navigation = useNavigation();
 
+    const { signIn, loading: authLoading, isLoggedIn } = useContext(AuthContext);
+
+    // Função para validar o formato de email
+    const isValidEmail = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
     const handleLogin = async () => {
-        setErrorMessage('');
         setLoading(true);
 
         if (!email || !password) {
-            setErrorMessage('Por favor, insira o email e a senha.');
+            Toast.show({
+                type: 'error',
+                text1: 'Erro',
+                text2: 'Por favor, insira o email e a senha.',
+            });
+            setLoading(false);
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro',
+                text2: 'Por favor, insira um email válido.',
+            });
             setLoading(false);
             return;
         }
 
         try {
-            await signIn({ email, password });
+            const status = await signIn({ email, password });
 
-        } catch (error: any) {
-            setErrorMessage(error.message || 'Erro ao fazer login. Tente novamente.');
+            if (status === 200 || status === 201) {
+                Toast.show({
+                    type: 'success',
+                    text1: 'Sucesso',
+                    text2: 'Login realizado com sucesso!',
+                });
+            } else if (status === 400) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Erro ao fazer login',
+                    text2: 'Credenciais incorretas. Verifique e tente novamente.',
+                });
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Erro ao fazer login',
+                    text2: 'Ocorreu um erro inesperado. Tente novamente.',
+                });
+            }
+        } catch {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro',
+                text2: 'Ocorreu um erro ao tentar fazer login. Tente novamente.',
+            });
         } finally {
             setLoading(false);
         }
@@ -49,10 +89,6 @@ const Login: React.FC = () => {
 
     useEffect(() => {
         if (isLoggedIn) {
-            Toast.show({
-                type: 'success',
-                text1: 'Login realizado com sucesso!',
-            });
             navigation.navigate('MainTabs');
         }
     }, [isLoggedIn]);
@@ -86,20 +122,19 @@ const Login: React.FC = () => {
                 secureTextEntry
             />
 
-            {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
-            {error ? <ErrorText>{error}</ErrorText> : null}
-
             <LoginButton onPress={handleLogin} disabled={loading || authLoading}>
                 {loading || authLoading ? <ActivityIndicator size="small" color="#fff" /> : <ButtonText>Entrar</ButtonText>}
             </LoginButton>
 
-            <ForgotPasswordButton onPress={() => Toast.show({ type: 'info', text1: 'Recuperação de senha' })}>
+            <ForgotPasswordButton onPress={() => Toast.show({ type: 'info', text1: 'Recuperação de senha', text2: 'Verifique seu email para recuperação de senha.' })}>
                 <ForgotPasswordText>Esqueceu a senha?</ForgotPasswordText>
             </ForgotPasswordButton>
 
             <SignUpButton onPress={navigateToSignUp}>
                 <SignUpText>Criar conta</SignUpText>
             </SignUpButton>
+
+            <Toast />
         </Container>
     );
 };

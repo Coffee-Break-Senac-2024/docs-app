@@ -1,94 +1,166 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useCallback, useContext, useEffect, useState } from "react"
-import AuthService from "../components/services/AuthService";
-import { signatureApi } from "../api/auth-api";
+import { createContext, useCallback, useContext, useState } from "react";
+import { signatureApi } from "../api/signature-api";
 import { AxiosError } from "axios";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface UserSignatureResponse {
-    signatureType: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL',
-    signetAt: string,
-    documentCount: number
-}
+type UserSignatureResponse = {
+    signature: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+    signedAt: string;
+    documentCount: number;
+} | null;
 
-interface UserSignatureRequest {
-    signatureType: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL'
+export interface UserSignatureRequest {
+    signature: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
 }
 
 interface SignatureContextData {
-    userSignature: UserSignatureResponse,
-    getSignature: () => Promise<void>,
-    assignSignature: (data: UserSignatureRequest) => Promise<number | undefined>
+    userSignature: UserSignatureResponse;
+    getSignature: () => Promise<void>;
+    assignSignature: (data: UserSignatureRequest) => Promise<number | undefined>;
+    changeSignaturePlan: (data: UserSignatureRequest) => Promise<number | undefined>; // Novo método
+    error: string | null;
 }
 
 const SignatureContext = createContext<SignatureContextData>({} as SignatureContextData);
 
 const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
-    const [data, setData] = useState<UserSignatureResponse>({} as UserSignatureResponse);
+    const [data, setData] = useState<UserSignatureResponse>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const getToken = async () => {
-        return await AuthService.getToken();
-    }
+    const getToken = async (): Promise<string | null> => {
+        try {
+            const token = await AsyncStorage.getItem('@docs:token');
+            console.log("TOKEEEEN: " + token);
+            return token;
+        } catch (error) {
+            console.error('Erro ao obter o token do AsyncStorage:', error);
+            return null;
+        }
+    };
 
     const getSignature = useCallback(async () => {
         try {
+            setLoading(true);
             const token = await getToken();
-            console.log(token, 'token');
-            setLoading(true);
-            const response = await signatureApi.get(`/api/user/signature`, {
+
+            if (!token) {
+                throw new Error('Token de autenticação não encontrado');
+            }
+
+            const response = await signatureApi.get('/api/user/signature', {
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                }
+                    Authorization: `Bearer ${token}`,
+                },
             });
 
-            console.log(response.data, 'response');
-            setData({ signatureType: response.data.signature, signetAt: response.data.signetAt, documentCount: response.data.documentCount });
+            console.log("STATUS:::", JSON.stringify(response.data, null, 2));
+
+            if (response.status === 200) {
+                setData(response.data);
+                setError(null);
+            } else {
+                setData(null);
+            }
         } catch (error) {
             if (error instanceof AxiosError) {
-                setError(error.response?.data.message || 'Erro ao buscar assinatura');
+                setData(null);
+            } else {
+                setData(null);
             }
         } finally {
             setLoading(false);
         }
-    }, [])
+    }, []);
 
-    const assignSignature = useCallback(async ({ signatureType }: UserSignatureRequest): Promise<number | undefined> => {
-        try {
-            const token = getToken();
-            setLoading(true);
-            const response = await signatureApi.post(`/api/user/signature`, {
-                signatureType
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`
+    const assignSignature = useCallback(
+        async ({ signature }: UserSignatureRequest): Promise<number | undefined> => {
+            try {
+                setLoading(true);
+                const token = await getToken();
+                if (!token) {
+                    throw new Error('Token de autenticação não encontrado');
                 }
-            });
 
-            return response.status;
-        } catch (error) {
-            if (error instanceof AxiosError) {
-                setError(error.response?.data.message || 'Erro ao atribuir assinatura');
-                return error.response?.data.status || 500;
+                const response = await signatureApi.post(
+                    '/api/user/signature/assign',
+                    { signature },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                console.log("STATUS:::" + response.status);
+                return response.status;
+            } catch (error) {
+                if (error instanceof AxiosError) {
+                    setError(error.response?.data.message || 'Erro ao atribuir assinatura');
+                    return error.response?.status || 500;
+                }
+                setError('Erro desconhecido ao atribuir assinatura.');
+                return 500;
+            } finally {
+                setLoading(false);
             }
-        } finally {
-            setLoading(false);
-        }
-    }, [])
+        },
+        []
+    );
+
+
+    const changeSignaturePlan = useCallback(
+        async ({ signature }: UserSignatureRequest): Promise<number | undefined> => {
+            try {
+                setLoading(true);
+                const token = await getToken();
+                if (!token) {
+                    throw new Error('Token de autenticação não encontrado');
+                }
+                console.log("MUDAR ASSINATURA" + token + "ss: " + signature);
+                const response = await signatureApi.patch(
+                    '/api/user/signature/change',
+                    { signature },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (response.status === 200) {
+                    setData(response.data);
+                    setError(null);
+                }
+
+                console.log("Plano alterado com sucesso:", response.data);
+                return response.status;
+            } catch (error) {
+                if (error instanceof AxiosError) {
+                    setError(error.response?.data.message || 'Erro ao alterar assinatura');
+                    return error.response?.status || 500;
+                }
+                setError('Erro desconhecido ao alterar assinatura.');
+                return 500;
+            } finally {
+                setLoading(false);
+            }
+        },
+        []
+    );
 
     return (
-        <SignatureContext.Provider value={{ userSignature: data, getSignature, assignSignature }}>
+        <SignatureContext.Provider value={{ userSignature: data, getSignature, assignSignature, changeSignaturePlan, error }}>
             {children}
         </SignatureContext.Provider>
-    )
-}
+    );
+};
 
 function useSignature(): SignatureContextData {
-    const context = useContext(SignatureContext)
+    const context = useContext(SignatureContext);
 
     if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error('useSignature must be used within a SignatureProvider');
     }
 
     return context;
