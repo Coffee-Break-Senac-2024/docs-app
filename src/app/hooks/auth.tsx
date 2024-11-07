@@ -54,6 +54,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (response.status === 200 || response.status === 201) {
                 const { access_token } = response.data;
                 await AsyncStorage.setItem('@docs:token', access_token);
+                console.log("Token de acesso: " + access_token);
+
                 setData({ token: access_token });
                 setCachedCredentials({ email, password });
                 setIsLoggedIn(true);

@@ -37,7 +37,7 @@ const Plan: React.FC = () => {
   const handleConfirmPlanChange = async () => {
     if (selectedPlan) {
       try {
-        const responseStatus = await changeSignaturePlan({ signatureType: selectedPlan });
+        const responseStatus = await changeSignaturePlan({ signature: selectedPlan });
         if (responseStatus === 200) {
           Toast.show({
             type: 'success',

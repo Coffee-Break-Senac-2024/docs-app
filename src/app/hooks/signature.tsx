@@ -10,7 +10,7 @@ type UserSignatureResponse = {
 } | null; 
 
 interface UserSignatureRequest {
-    signatureType: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+    signature: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
 }
 
 interface SignatureContextData {
@@ -74,7 +74,7 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
     
     const assignSignature = useCallback(
-        async ({ signatureType }: UserSignatureRequest): Promise<number | undefined> => {
+        async ({ signature }: UserSignatureRequest): Promise<number | undefined> => {
             try {
                 setLoading(true);
                 const token = await getToken();
@@ -84,7 +84,7 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
     
                 const response = await signatureApi.post(
                     '/api/user/signature/assign', 
-                    { signatureType },
+                    { signature },
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -110,17 +110,17 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
 
    
     const changeSignaturePlan = useCallback(
-        async ({ signatureType }: UserSignatureRequest): Promise<number | undefined> => {
+        async ({ signature }: UserSignatureRequest): Promise<number | undefined> => {
             try {
                 setLoading(true);
                 const token = await getToken();
                 if (!token) {
                     throw new Error('Token de autenticação não encontrado');
                 }
-
-                const response = await signatureApi.put(
+            console.log("MUDAR ASSINATURA" + token +"ss: " + signature);
+                const response = await signatureApi.patch(
                     '/api/user/signature/change', 
-                    { signatureType },
+                    { signature },
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
