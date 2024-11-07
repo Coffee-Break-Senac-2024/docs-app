@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSignature } from '../../hooks/signature';
 import Toast from 'react-native-toast-message';
-import { AuthContext } from '../../hooks/auth'; 
+import { AuthContext } from '../../hooks/auth';
 
 const PlanSelection: React.FC = () => {
     const { userSignature, getSignature, assignSignature } = useSignature();
@@ -24,7 +24,7 @@ const PlanSelection: React.FC = () => {
     const handleConfirmPlan = async () => {
         if (!selectedPlan) return;
 
-        const responseStatus = await assignSignature({ signatureType: selectedPlan as 'MONTHLY' | 'QUARTERLY' | 'ANNUAL' });
+        const responseStatus = await assignSignature({ signature: selectedPlan as 'MONTHLY' | 'QUARTERLY' | 'ANNUAL' });
 
         if (responseStatus === 200 || responseStatus === 201) {
             Toast.show({ type: 'success', text1: 'Assinatura cadastrada com sucesso!' });
@@ -34,7 +34,7 @@ const PlanSelection: React.FC = () => {
     };
 
     const handleLogout = async () => {
-        await signOut(); 
+        await signOut();
         Toast.show({ type: 'info', text1: 'Você foi desconectado!' });
     };
 

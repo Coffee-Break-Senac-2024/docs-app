@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Button, Modal, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Container, Title, Description, Card, CardTitle, CardDescription } from './styles';
 import Toast from 'react-native-toast-message';
-import { useSignature } from '../../hooks/signature';
+import { UserSignatureRequest, useSignature } from '../../hooks/signature';
 
 const Plan: React.FC = () => {
     const { changeSignaturePlan, userSignature, getSignature } = useSignature();
-    const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+    const [selectedPlan, setSelectedPlan] = useState<UserSignatureRequest | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
 
-    const plans = [
+    const plans: { id: string; title: string; description: string; type: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL' }[] = [
         {
             id: '1',
             title: 'Mensal',
@@ -37,7 +37,7 @@ const Plan: React.FC = () => {
     const handleConfirmPlanChange = async () => {
         if (selectedPlan) {
             try {
-                const responseStatus = await changeSignaturePlan({ signature: selectedPlan });
+                const responseStatus = await changeSignaturePlan({ signature: selectedPlan.signature });
                 if (responseStatus === 200) {
                     Toast.show({
                         type: 'success',
@@ -65,7 +65,7 @@ const Plan: React.FC = () => {
         }
     };
 
-    const openConfirmationModal = (planType: string) => {
+    const openConfirmationModal = (planType: UserSignatureRequest) => {
         setSelectedPlan(planType);
         setModalVisible(true);
     };
@@ -93,7 +93,7 @@ const Plan: React.FC = () => {
                         <CardDescription>{plan.description}</CardDescription>
                         <Button
                             title={`Selecionar ${plan.title}`}
-                            onPress={() => openConfirmationModal(plan.type)}
+                            onPress={() => openConfirmationModal({ signature: plan.type })}
                         />
                     </Card>
                 ))}

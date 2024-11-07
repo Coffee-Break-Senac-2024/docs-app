@@ -78,13 +78,15 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
             try {
                 setLoading(true);
                 const token = await getToken();
+                console.log(token, 'token')
+                console.log(signature, 'signature')
                 if (!token) {
                     throw new Error('Token de autenticação não encontrado');
                 }
 
                 const response = await signatureApi.post(
                     '/api/user/signature/assign',
-                    { signature },
+                    { signature: signature },
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -92,10 +94,13 @@ const SignatureProvider = ({ children }: { children: React.ReactNode }) => {
                     }
                 );
 
+                console.log(response, 'response');
+
                 console.log("STATUS:::" + response.status);
                 return response.status;
             } catch (error) {
                 if (error instanceof AxiosError) {
+                    console.log(error.response, 'error.response');
                     setError(error.response?.data.message || 'Erro ao atribuir assinatura');
                     return error.response?.status || 500;
                 }

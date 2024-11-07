@@ -25,18 +25,21 @@
         "web": {
             "favicon": "./assets/favicon.png"
         },
+        "plugins": [
+            [
+                "expo-build-properties",
+                {
+                    "android": {
+                        "usesCleartextTraffic": true
+                    }
+                }
+            ]
+        ],
         "extra": {
             "eas": {
-                "projectId": "a763cced-ded9-4ae3-ad28-d9703045fa49"
+                "projectId": "24f8d1f4-6af1-4669-90b1-799ebdbef877"
             }
         },
-        "plugins": [
-            "expo-build-properties",
-            {
-                "android": {
-                    "usesCleartextTraffic": true
-                }
-            }
-        ]
+        "owner": "bielxrd"
     }
 }
