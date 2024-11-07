@@ -14,9 +14,12 @@ import SignUp from './src/app/pages/signUp/SignUp';
 import EditProfile from './src/app/pages/profile/EditProfile';
 import PlanSelection from './src/app/pages/plans/PlanSelection';
 import Plan from './src/app/pages/plans/Plan';
+import DocumentDisplay from './src/app/pages/wallet/documentDisplay';
+import DocumentCreate from './src/app/pages/wallet/WalletCreate'
 
 import { AuthProvider, AuthContext } from './src/app/hooks/auth';
 import { SignatureProvider, useSignature } from './src/app/hooks/signature';
+import { WalletProvider, useWallet } from './src/app/hooks/wallet';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -75,6 +78,8 @@ const AppNavigator = () => {
             <Stack.Screen name="AuthenticatedTabs" component={AuthenticatedTabs} options={{ headerShown: false }} />
             <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
             <Stack.Screen name="Plan" component={Plan} options={{ title: 'Alterar Plano' }} />
+            <Stack.Screen name="DocumentDisplay" component={DocumentDisplay} options={{ title: 'Exibir Documento' }} />
+            <Stack.Screen name="DocumentCreate" component={DocumentCreate} options={{ title: 'Cadastrar Documento' }} />
           </>
         ) : (
           <Stack.Screen name="PlanSelection" component={PlanSelection} options={{ title: 'Escolha um Plano' }} />
@@ -93,10 +98,12 @@ const App = () => {
   return (
     <AuthProvider>
       <SignatureProvider>
-        <NavigationContainer>
-          <AppNavigator />
-          <Toast />
-        </NavigationContainer>
+        <WalletProvider>
+          <NavigationContainer>
+            <AppNavigator />
+            <Toast />
+          </NavigationContainer>
+        </WalletProvider>
       </SignatureProvider>
     </AuthProvider>
   );

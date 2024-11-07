@@ -1,15 +1,34 @@
 import React from 'react';
-import { Container, Title, Description } from './styles';
-import Header from '../../components/Header/Header'; 
+import { Button, View, StyleSheet } from 'react-native';
+import Layout from '../../pages/Layout/Layout';
+import { useNavigation } from '@react-navigation/native';
 
 const Wallet: React.FC = () => {
+  const navigation = useNavigation();
+
   return (
-    <Container>
-      <Header title="Carteira" />
-      <Title>Carteira</Title>
-      <Description>Meus Documentos.</Description>
-    </Container>
+    <Layout title="Carteira">
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Exibir Documento"
+          onPress={() => navigation.navigate('DocumentDisplay')}
+        />
+        <Button
+          title="Cadastrar Documento"
+          onPress={() => navigation.navigate('DocumentCreate')}
+          color="#004aad"
+        />
+      </View>
+    </Layout>
   );
 };
+
+const styles = StyleSheet.create({
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+  },
+});
 
 export default Wallet;
