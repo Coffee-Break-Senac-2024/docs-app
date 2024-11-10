@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Toast from 'react-native-toast-message';
+import { Picker } from '@react-native-picker/picker';
 import { Container, Title, Description, Input, Label, ButtonContainer, FileName, StyledButton, ButtonText } from './styles';
 import Header from '../../components/Header/Header';
 import { useWallet } from '../../hooks/wallet';
-import { AxiosError } from 'axios';
 
 const Wallet: React.FC = () => {
   const [documentName, setDocumentName] = useState('');
   const [walletDocumentType, setWalletDocumentType] = useState('');
   const [file, setFile] = useState(null);
-  
+  const [isLoading, setIsLoading] = useState(false);
+
   const { createDocument, error } = useWallet();
 
   const handleFileUpload = async () => {
@@ -31,7 +32,11 @@ const Wallet: React.FC = () => {
           });
         } else if (response.assets && response.assets.length > 0) {
           const selectedFile = response.assets[0];
-          setFile(selectedFile);
+          setFile({
+            uri: selectedFile.uri,
+            name: selectedFile.fileName || selectedFile.uri.split('/').pop(),
+            type: selectedFile.type,
+          });
           Toast.show({
             type: 'success',
             text1: 'Arquivo selecionado',
@@ -51,47 +56,30 @@ const Wallet: React.FC = () => {
       });
       return;
     }
-  
-    try {
-      const status = await createDocument({
-        file: {
-          uri: file.uri,
-          name: file.fileName,
-          type: file.type,
-        },
-        documentName,
-        walletDocumentType,
+
+    setIsLoading(true); 
+
+    const status = await createDocument({
+      file,
+      documentName,
+      walletDocumentType,
+    });
+
+    if (status === 201) {
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso',
+        text2: 'Documento cadastrado com sucesso!',
       });
-  
-      if (status === 201) {
-        Toast.show({
-          type: 'success',
-          text1: 'Sucesso',
-          text2: 'Documento cadastrado com sucesso!',
-        });
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro',
-          text2: error || 'Erro ao cadastrar documento',
-        });
-      }
-    } catch (e) {
-      console.log('Erro ao cadastrar documento:', e); 
-      if (e instanceof AxiosError) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao cadastrar documento',
-          text2: e.response?.data?.message || e.message || 'Erro desconhecido',
-        });
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro desconhecido',
-          text2: 'Erro ao cadastrar documento',
-        });
-      }
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: error || 'Erro ao cadastrar documento',
+      });
     }
+
+    setIsLoading(false); 
   };
 
   return (
@@ -107,11 +95,15 @@ const Wallet: React.FC = () => {
           onChangeText={setDocumentName}
         />
         <Label>Tipo de Documento</Label>
-        <Input
-          placeholder="Tipo de Documento"
-          value={walletDocumentType}
-          onChangeText={setWalletDocumentType}
-        />
+        <Picker
+          selectedValue={walletDocumentType}
+          onValueChange={(itemValue) => setWalletDocumentType(itemValue)}
+          style={{ height: 50, width: '100%' }}
+        >
+          <Picker.Item label="Selecione o tipo de documento" value="" />
+          <Picker.Item label="RG" value="RG" />
+          <Picker.Item label="CNH" value="CNH" />
+        </Picker>
         <Label>Arquivo</Label>
         <ButtonContainer>
           <StyledButton onPress={handleFileUpload}>
@@ -119,11 +111,15 @@ const Wallet: React.FC = () => {
           </StyledButton>
         </ButtonContainer>
         {file && (
-          <FileName>Arquivo Selecionado: {file.fileName || file.uri.split('/').pop()}</FileName>
+          <FileName>Arquivo Selecionado: {file.name}</FileName>
         )}
         <ButtonContainer>
           <StyledButton onPress={handleSubmit} primary>
-            <ButtonText>Cadastrar Documento</ButtonText>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <ButtonText>Cadastrar Documento</ButtonText>
+            )}
           </StyledButton>
         </ButtonContainer>
       </View>
