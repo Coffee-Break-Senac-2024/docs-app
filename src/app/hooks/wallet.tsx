@@ -86,7 +86,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
                 formData.append('file', file);
                 formData.append('documentName', documentName);
                 formData.append('walletDocumentType', walletDocumentType);
-
+                console.log("Resposta da API: "+ JSON.stringify(file, null, 2));
                 const response = await walletApi.post('/api/user/wallet/create', formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -94,7 +94,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
                     },
                 });
 
-                console.log("Resposta da API:", JSON.stringify(response.data, null, 2));
+                console.log("Resposta da API:",response, JSON.stringify(response, null, 2));
 
                 if (response.status === 201) {
                     setError(null);

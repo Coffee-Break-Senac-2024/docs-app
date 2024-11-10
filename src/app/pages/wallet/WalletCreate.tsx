@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Platform } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
+import { View } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import Toast from 'react-native-toast-message';
 import { Container, Title, Description, Input, Label, ButtonContainer, FileName, StyledButton, ButtonText } from './styles';
 import Header from '../../components/Header/Header';
@@ -15,45 +15,31 @@ const Wallet: React.FC = () => {
   const { createDocument, error } = useWallet();
 
   const handleFileUpload = async () => {
-    if (Platform.OS === 'web') {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.onchange = (event) => {
-        const selectedFile = event.target.files[0];
-        if (selectedFile) {
-          setFile(selectedFile);
-          Toast.show({
-            type: 'success',
-            text1: 'Arquivo selecionado',
-            text2: selectedFile.name,
-          });
-        }
-      };
-      input.click();
-    } else {
-      try {
-        const result = await DocumentPicker.getDocumentAsync({});
-        if (result.type === 'success') {
-          setFile(result);
-          Toast.show({
-            type: 'success',
-            text1: 'Arquivo selecionado',
-            text2: result.name,
-          });
-        } else {
+    launchImageLibrary(
+      { mediaType: 'photo', includeBase64: true },
+      (response) => {
+        if (response.didCancel) {
           Toast.show({
             type: 'info',
             text1: 'Seleção de arquivo cancelada',
           });
+        } else if (response.errorMessage) {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro ao selecionar arquivo',
+            text2: response.errorMessage,
+          });
+        } else if (response.assets && response.assets.length > 0) {
+          const selectedFile = response.assets[0];
+          setFile(selectedFile);
+          Toast.show({
+            type: 'success',
+            text1: 'Arquivo selecionado',
+            text2: selectedFile.fileName || selectedFile.uri.split('/').pop(),
+          });
         }
-      } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao selecionar arquivo',
-          text2: error.message,
-        });
       }
-    }
+    );
   };
 
   const handleSubmit = async () => {
@@ -68,7 +54,11 @@ const Wallet: React.FC = () => {
   
     try {
       const status = await createDocument({
-        file: file,
+        file: {
+          uri: file.uri,
+          name: file.fileName,
+          type: file.type,
+        },
         documentName,
         walletDocumentType,
       });
@@ -129,7 +119,7 @@ const Wallet: React.FC = () => {
           </StyledButton>
         </ButtonContainer>
         {file && (
-          <FileName>Arquivo Selecionado: {file.name || file.uri.split('/').pop()}</FileName>
+          <FileName>Arquivo Selecionado: {file.fileName || file.uri.split('/').pop()}</FileName>
         )}
         <ButtonContainer>
           <StyledButton onPress={handleSubmit} primary>
