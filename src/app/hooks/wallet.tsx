@@ -5,8 +5,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { Alert } from "react-native";
 
+// Define o tipo para arquivo com `uri`, `name` e `type`
+interface FileWithUri {
+    uri: string;
+    name: string;
+    type: string;
+}
+
 export interface WalletDocumentRequest {
-    file: File | string;
+    file: FileWithUri;
     documentName: string;
     walletDocumentType: string;
 }
@@ -75,33 +82,34 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     const createDocument = useCallback(
         async ({ file, documentName, walletDocumentType }: WalletDocumentRequest): Promise<number | undefined> => {
             try {
-                console.log("Resposta da API:");
                 setLoading(true);
                 const token = await getToken();
                 if (!token) {
                     throw new Error('Token de autenticação não encontrado');
                 }
 
+                // Transformar o `uri` em um `Blob` usando `fetch`
+                const response = await fetch(file.uri);
+                const blob = await response.blob();
+
                 const formData = new FormData();
-                formData.append('file', file);
+                formData.append('file', blob, file.name); // Adiciona o arquivo como `Blob` com o nome do arquivo
                 formData.append('documentName', documentName);
                 formData.append('walletDocumentType', walletDocumentType);
-                console.log("Resposta da API: "+ JSON.stringify(file, null, 2));
-                const response = await walletApi.post('/api/user/wallet/create', formData, {
+
+                const apiResponse = await walletApi.post('/api/user/wallet/create', formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data',
                     },
                 });
 
-                console.log("Resposta da API:",response, JSON.stringify(response, null, 2));
-
-                if (response.status === 201) {
+                if (apiResponse.status === 201) {
                     setError(null);
-                    return response.status;
+                    return apiResponse.status;
                 } else {
                     setError('Erro ao cadastrar documento');
-                    return response.status;
+                    return apiResponse.status;
                 }
             } catch (error) {
                 if (error instanceof AxiosError) {
@@ -116,7 +124,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         },
         []
     );
-
 
     const downloadDocument = useCallback(async (documentId: string, documentName: string) => {
         try {
@@ -158,7 +165,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
             setError('Erro ao baixar o documento');
         }
     }, []);
-
 
     return (
         <WalletContext.Provider value={{ createDocument, getDocuments, downloadDocument, documents, error }}>

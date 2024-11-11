@@ -6,6 +6,9 @@ export const Container = styled.View`
   justify-content: center;
 `;
 
+export const FormContainer = styled.View`
+  padding: 20px;
+`;
 
 export const Title = styled.Text`
   font-size: 28px;

@@ -3,14 +3,20 @@ import { View, ActivityIndicator } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Toast from 'react-native-toast-message';
 import { Picker } from '@react-native-picker/picker';
-import { Container, Title, Description, Input, Label, ButtonContainer, FileName, StyledButton, ButtonText } from './styles';
-import Header from '../../components/Header/Header';
+import { Container, Title, FormContainer, Input, Label, ButtonContainer, FileName, StyledButton, ButtonText } from './styles';
 import { useWallet } from '../../hooks/wallet';
+import { AxiosError } from 'axios';
+
+interface FileWithUri {
+  uri: string;
+  name: string;
+  type: string;
+}
 
 const Wallet: React.FC = () => {
   const [documentName, setDocumentName] = useState('');
   const [walletDocumentType, setWalletDocumentType] = useState('');
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<FileWithUri | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { createDocument, error } = useWallet();
@@ -46,7 +52,7 @@ const Wallet: React.FC = () => {
       }
     );
   };
-
+  
   const handleSubmit = async () => {
     if (!documentName || !walletDocumentType || !file) {
       Toast.show({
@@ -56,38 +62,53 @@ const Wallet: React.FC = () => {
       });
       return;
     }
+  
+    setIsLoading(true);
 
-    setIsLoading(true); 
-
-    const status = await createDocument({
-      file,
-      documentName,
-      walletDocumentType,
-    });
-
-    if (status === 201) {
-      Toast.show({
-        type: 'success',
-        text1: 'Sucesso',
-        text2: 'Documento cadastrado com sucesso!',
+    try {
+      const status = await createDocument({
+        file,
+        documentName,
+        walletDocumentType,
       });
-    } else {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: error || 'Erro ao cadastrar documento',
-      });
+  
+      if (status === 200) {
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso',
+          text2: 'Documento cadastrado com sucesso!',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: error || 'Erro ao cadastrar documento',
+        });
+      }
+    } catch (e) {
+      console.log('Erro ao cadastrar documento:', e); 
+      if (e instanceof AxiosError) {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao cadastrar documento',
+          text2: e.response?.data?.message || e.message || 'Erro desconhecido',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro desconhecido',
+          text2: 'Erro ao cadastrar documento',
+        });
+      }
+    } finally {
+      setIsLoading(false); 
     }
-
-    setIsLoading(false); 
   };
 
   return (
     <Container>
-      <Header title="Carteira" />
-      <Title>Carteira</Title>
-      <Description>Meus Documentos</Description>
-      <View>
+      <Title>Cadastro de Documentos</Title>
+      <FormContainer>
         <Label>Nome do Documento</Label>
         <Input
           placeholder="Nome do Documento"
@@ -98,7 +119,7 @@ const Wallet: React.FC = () => {
         <Picker
           selectedValue={walletDocumentType}
           onValueChange={(itemValue) => setWalletDocumentType(itemValue)}
-          style={{ height: 50, width: '100%' }}
+          style={{ height: 50, width: '100%', marginBottom: 15, borderRadius: 10 }}
         >
           <Picker.Item label="Selecione o tipo de documento" value="" />
           <Picker.Item label="RG" value="RG" />
@@ -122,7 +143,7 @@ const Wallet: React.FC = () => {
             )}
           </StyledButton>
         </ButtonContainer>
-      </View>
+      </FormContainer>
     </Container>
   );
 };
