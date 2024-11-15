@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Button, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Button, Alert } from 'react-native';
 import { useWallet } from '../../hooks/wallet';
 import Toast from 'react-native-toast-message';
 
@@ -8,36 +8,31 @@ const WalletDisplay: React.FC = () => {
 
   useEffect(() => {
     const fetchDocuments = async () => {
-      const data = await getDocuments();
-      console.log("Dados carregados:", data);
+      try {
+        const data = await getDocuments();
+        console.log("Dados carregados:", data);
+      } catch (err) {
+        console.error("Erro ao buscar documentos:", err);
+      }
     };
     fetchDocuments();
   }, [getDocuments]);
 
   const handleDownload = async (documentId: string, documentName: string) => {
-    if (Platform.OS === 'web') {
-      const downloadUrl = `http://ec2-52-201-168-41.compute-1.amazonaws.com:8082/api/user/wallet/download/${documentId}`;
-      Linking.openURL(downloadUrl);
+    try {
+      await downloadDocument(documentId, documentName);
       Toast.show({
-        type: 'info',
-        text1: 'Download iniciado',
-        text2: 'O download foi iniciado em uma nova aba.',
+        type: 'success',
+        text1: 'Download concluído',
+        text2: `O documento "${documentName}" foi baixado com sucesso.`,
       });
-    } else {
-      try {
-        await downloadDocument(documentId, documentName);
-        Toast.show({
-          type: 'success',
-          text1: 'Download concluído',
-          text2: `O documento "${documentName}" foi baixado com sucesso.`,
-        });
-      } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro',
-          text2: 'Não foi possível baixar o documento.',
-        });
-      }
+    } catch (error) {
+      console.error("Erro ao baixar documento:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível baixar o documento.',
+      });
     }
   };
 
@@ -104,11 +99,6 @@ const styles = StyleSheet.create({
   documentType: {
     fontSize: 14,
     color: '#666',
-  },
-  documentUrl: {
-    fontSize: 12,
-    color: '#004aad',
-    marginTop: 5,
   },
 });
 

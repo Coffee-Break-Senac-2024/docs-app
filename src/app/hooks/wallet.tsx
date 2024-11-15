@@ -127,44 +127,41 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
     const downloadDocument = useCallback(async (documentId: string, documentName: string) => {
         try {
+            const documentsDir = `${FileSystem.documentDirectory}Documents/`; // Diretório da pasta
+            const fileUri = `${documentsDir}${documentName}`; // Caminho completo do arquivo
+    
+            // Verifica se a pasta Documents existe, caso contrário, cria
+            const dirInfo = await FileSystem.getInfoAsync(documentsDir);
+            if (!dirInfo.exists) {
+                await FileSystem.makeDirectoryAsync(documentsDir, { intermediates: true });
+                console.log('Pasta "Documents" criada com sucesso.');
+            }
+    
             const downloadUrl = `http://ec2-52-201-168-41.compute-1.amazonaws.com:8082/api/user/wallet/download/${documentId}`;
-            const fileUri = `${FileSystem.documentDirectory}${documentName}`;
-
             const token = await getToken();
             if (!token) {
                 throw new Error('Token de autenticação não encontrado');
             }
-
-            const response = await fetch(downloadUrl, {
+    
+           
+            const downloadRes = await FileSystem.downloadAsync(downloadUrl, fileUri, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
-
-            if (!response.ok) {
-                throw new Error(`Erro ao baixar o documento: ${response.statusText}`);
+    
+            if (downloadRes.status !== 200) {
+                throw new Error(`Erro ao baixar o arquivo: ${downloadRes.status}`);
             }
-
-            const blob = await response.blob();
-            const fileReader = new FileReader();
-
-            fileReader.onloadend = async () => {
-                const base64data = fileReader.result as string;
-
-                await FileSystem.writeAsStringAsync(fileUri, base64data, {
-                    encoding: FileSystem.EncodingType.Base64,
-                });
-
-                console.log(`Download concluído. Arquivo salvo em: ${fileUri}`);
-                Alert.alert("Download concluído", `Arquivo salvo em: ${fileUri}`);
-            };
-
-            fileReader.readAsDataURL(blob);
+    
+            console.log(`Download concluído. Arquivo salvo em: ${fileUri}`);
+            Alert.alert("Download concluído", `Arquivo salvo em: ${fileUri}`);
         } catch (error) {
             console.error("Erro ao baixar o arquivo:", error);
             setError('Erro ao baixar o documento');
         }
     }, []);
+    
 
     return (
         <WalletContext.Provider value={{ createDocument, getDocuments, downloadDocument, documents, error }}>
