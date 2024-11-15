@@ -13,13 +13,11 @@ import Wallet from './src/app/pages/wallet/Wallet';
 import Login from './src/app/pages/login/Login';
 import SignUp from './src/app/pages/signUp/SignUp';
 import EditProfile from './src/app/pages/profile/EditProfile';
-import PlanSelection from './src/app/pages/plans/PlanSelection';
 import Plan from './src/app/pages/plans/Plan';
 import WalletDisplay from './src/app/pages/wallet/WalletDisplay';
 import DocumentCreate from './src/app/pages/wallet/WalletCreate';
 
 import { AuthProvider, AuthContext } from './src/app/hooks/auth';
-import { SignatureProvider, useSignature } from './src/app/hooks/signature';
 import { WalletProvider } from './src/app/hooks/wallet';
 
 const Stack = createNativeStackNavigator();
@@ -60,21 +58,11 @@ const AuthenticatedTabs = () => (
 
 const AppNavigator = () => {
   const { isLoggedIn } = useContext(AuthContext);
-  const { getSignature, userSignature } = useSignature();
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSignature = async () => {
-      if (isLoggedIn) {
-        setLoading(true); 
-        await getSignature();
-        setLoading(false); 
-      } else {
-        setLoading(false);
-      }
-    };
-    fetchSignature();
-  }, [isLoggedIn, getSignature]);
+    setLoading(false);
+  }, []);
 
   if (loading) {
     return (
@@ -87,17 +75,17 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator>
       {isLoggedIn ? (
-        userSignature ? (
-          <>
-            <Stack.Screen name="AuthenticatedTabs" component={AuthenticatedTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
-            <Stack.Screen name="Plan" component={Plan} options={{ title: 'Alterar Plano' }} />
-            <Stack.Screen name="WalletDisplay" component={WalletDisplay} options={{ title: 'Exibir Documento' }} />
-            <Stack.Screen name="DocumentCreate" component={DocumentCreate} options={{ title: 'Cadastrar Documento' }} />
-          </>
-        ) : (
-          <Stack.Screen name="PlanSelection" component={PlanSelection} options={{ title: 'Escolha um Plano' }} />
-        )
+        <>
+          <Stack.Screen
+            name="AuthenticatedTabs"
+            component={AuthenticatedTabs}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
+          <Stack.Screen name="Plan" component={Plan} options={{ title: 'Alterar Plano' }} />
+          <Stack.Screen name="WalletDisplay" component={WalletDisplay} options={{ title: 'Exibir Documento' }} />
+          <Stack.Screen name="DocumentCreate" component={DocumentCreate} options={{ title: 'Cadastrar Documento' }} />
+        </>
       ) : (
         <>
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
@@ -111,14 +99,12 @@ const AppNavigator = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <SignatureProvider>
-        <WalletProvider>
-          <NavigationContainer>
-            <AppNavigator />
-            <Toast />
-          </NavigationContainer>
-        </WalletProvider>
-      </SignatureProvider>
+      <WalletProvider>
+        <NavigationContainer>
+          <AppNavigator />
+          <Toast />
+        </NavigationContainer>
+      </WalletProvider>
     </AuthProvider>
   );
 };

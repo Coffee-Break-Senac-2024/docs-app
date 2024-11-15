@@ -35,31 +35,40 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const loadStorageData = async () => {
-            const token = await AsyncStorage.getItem('@docs:token');
-            if (token) {
-                setData({ token });
-                setIsLoggedIn(true);
-                await getSignature();
+            setLoading(true);
+            try {
+                const token = await AsyncStorage.getItem('@docs:token');
+                if (token) {
+                    setData({ token });
+                    setIsLoggedIn(true);
+                } else {
+                    setIsLoggedIn(false);
+                }
+            } catch (err) {
+                console.error('Erro ao carregar dados do AsyncStorage:', err);
+                setIsLoggedIn(false);
+            } finally {
+                setLoading(false);
             }
         };
         loadStorageData();
     }, []);
+    
+    
 
     const signIn = useCallback(async ({ email, password }: Credentials): Promise<number> => {
         setError(null);
         try {
             setLoading(true);
             const response = await api.post(`/api/user/auth`, { email, password });
-
+    
             if (response.status === 200 || response.status === 201) {
                 const { access_token } = response.data;
                 await AsyncStorage.setItem('@docs:token', access_token);
-                console.log("Token de acesso: " + access_token);
-
+    
                 setData({ token: access_token });
                 setCachedCredentials({ email, password });
-                setIsLoggedIn(true);
-                await getSignature();
+                setIsLoggedIn(true); 
                 return response.status;
             } else {
                 throw new Error('Falha na autenticação.');
@@ -75,7 +84,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } finally {
             setLoading(false);
         }
-    }, [getSignature]);
+    }, []);
+    
 
     const signUp = useCallback(async ({ name, document, email, password }: { name: string; document: string; email: string; password: string; }): Promise<number> => {
         setError(null);
