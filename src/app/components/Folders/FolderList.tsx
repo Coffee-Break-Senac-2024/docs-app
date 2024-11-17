@@ -2,49 +2,54 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, ActivityIndicator, View, Modal, Button, Text, Image } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import Icon from 'react-native-vector-icons/Ionicons';
-import QRCode from 'react-native-qrcode-svg'; 
+import QRCode from 'react-native-qrcode-svg';
+import { useWallet } from '../../hooks/wallet';
 import { Container, FolderItem, FolderName, ErrorText } from './styles';
 
 const FolderList: React.FC = () => {
   const [folders, setFolders] = useState<any[]>([]);
+  const [validatedDocuments, setValidatedDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFolder, setSelectedFolder] = useState<any | null>(null); 
-  const [modalVisible, setModalVisible] = useState(false); 
+  const [selectedFolder, setSelectedFolder] = useState<any | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
+  const { getValidatedDocuments } = useWallet();
   const documentsDir = `${FileSystem.documentDirectory}Documents/`;
 
   useEffect(() => {
-    const fetchFolders = async () => {
+    const fetchFoldersAndValidatedDocuments = async () => {
       try {
         setLoading(true);
 
-        // Verifica se a pasta "Documents" existe, caso contrário, cria
+        // Verifica e carrega arquivos locais na pasta "Documents"
         const dirInfo = await FileSystem.getInfoAsync(documentsDir);
         if (!dirInfo.exists) {
           await FileSystem.makeDirectoryAsync(documentsDir, { intermediates: true });
         }
-
-        // Carrega arquivos na pasta "Documents"
         const files = await FileSystem.readDirectoryAsync(documentsDir);
         const filesWithPaths = files.map((fileName) => ({
           id: fileName,
           name: fileName,
           path: `${documentsDir}${fileName}`,
-          isImage: /\.(jpg|jpeg|png|gif)$/i.test(fileName), // Verifica se o arquivo é uma imagem
+          isImage: /\.(jpg|jpeg|png|gif)$/i.test(fileName),
         }));
 
+        // Recupera os documentos validados salvos no AsyncStorage
+        const validatedDocs = await getValidatedDocuments();
+
         setFolders(filesWithPaths);
+        setValidatedDocuments(validatedDocs);
       } catch (err: any) {
-        setError('Erro ao carregar os arquivos.');
-        console.error('Erro ao acessar pastas ou arquivos:', err);
+        setError('Erro ao carregar os arquivos ou documentos validados.');
+        console.error('Erro ao acessar pastas ou documentos validados:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchFolders();
-  }, []);
+    fetchFoldersAndValidatedDocuments();
+  }, [getValidatedDocuments]);
 
   const handleFolderClick = (folder: any) => {
     setSelectedFolder(folder);
@@ -66,6 +71,16 @@ const FolderList: React.FC = () => {
     </FolderItem>
   );
 
+  const renderValidatedItem = ({ item }: { item: { id: string; documentName: string; message: string } }) => (
+    <FolderItem>
+      <Icon name="checkmark-circle-outline" size={24} color="#28a745" />
+      <FolderName>{item.documentName}</FolderName>
+      <Text style={{ fontSize: 12, color: item.message.includes('válida') ? '#28a745' : '#dc3545' }}>
+        {item.message}
+      </Text>
+    </FolderItem>
+  );
+
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
@@ -74,22 +89,31 @@ const FolderList: React.FC = () => {
     return <ErrorText>{error}</ErrorText>;
   }
 
-  if (folders.length === 0) {
+  if (folders.length === 0 && validatedDocuments.length === 0) {
     return (
       <Container style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-        <Text style={{ fontSize: 16 }}>Nenhum documento encontrado na pasta.</Text>
+        <Text style={{ fontSize: 16 }}>Nenhum documento encontrado.</Text>
       </Container>
     );
   }
 
   return (
     <Container>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Arquivos Locais</Text>
       <FlatList
         data={folders}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={3}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
+        showsVerticalScrollIndicator={false}
+      />
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginVertical: 10 }}>Documentos Validados</Text>
+      <FlatList
+        data={validatedDocuments}
+        renderItem={renderValidatedItem}
+        keyExtractor={(item) => item.id}
+        numColumns={1}
         showsVerticalScrollIndicator={false}
       />
       <Modal

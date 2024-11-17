@@ -4,7 +4,7 @@ import { useWallet } from '../../hooks/wallet';
 import Toast from 'react-native-toast-message';
 
 const WalletDisplay: React.FC = () => {
-  const { getDocuments, downloadDocument, documents, error } = useWallet();
+  const { getDocuments, downloadDocument, validateDocument, documents, error } = useWallet();
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -36,6 +36,16 @@ const WalletDisplay: React.FC = () => {
     }
   };
 
+  const handleValidate = async (documentId: string, documentName: string) => {
+    try {
+      const validationMessage = await validateDocument(documentId, documentName);
+      Alert.alert('Validação', validationMessage || 'Erro ao validar o documento.');
+    } catch (error) {
+      console.error("Erro ao validar documento:", error);
+      Alert.alert('Erro', 'Não foi possível validar o documento.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.headerText}>Documentos</Text>
@@ -49,11 +59,18 @@ const WalletDisplay: React.FC = () => {
             <View style={styles.documentItem}>
               <Text style={styles.documentName}>Nome do Documento: {item.documentName}</Text>
               <Text style={styles.documentType}>Tipo: {item.walletDocumentType}</Text>
-              <Button
-                title="Baixar"
-                onPress={() => handleDownload(item.id, item.documentName)}
-                color="#004aad"
-              />
+              <View style={styles.buttonContainer}>
+                <Button
+                  title="Baixar"
+                  onPress={() => handleDownload(item.id, item.documentName)}
+                  color="#004aad"
+                />
+                <Button
+                  title="Validar"
+                  onPress={() => handleValidate(item.id, item.documentName)}
+                  color="#007BFF"
+                />
+              </View>
             </View>
           )}
         />
@@ -99,6 +116,11 @@ const styles = StyleSheet.create({
   documentType: {
     fontSize: 14,
     color: '#666',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
   },
 });
 
