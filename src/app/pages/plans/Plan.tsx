@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Modal, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Container, Title, Description, Card, CardTitle, CardDescription } from './styles';
 import Toast from 'react-native-toast-message';
@@ -30,11 +30,15 @@ const Plan: React.FC = () => {
         },
     ];
 
-    useEffect(() => {
-        getSignature();
-    }, []);
+    const handleGetSignature = useCallback(async () => {
+        await getSignature();
+    }, [getSignature]);
 
-    const handleConfirmPlanChange = async () => {
+    useEffect(() => {
+        handleGetSignature();
+    }, [handleGetSignature]);
+
+    const handleConfirmPlanChange = useCallback(async () => {
         if (selectedPlan) {
             try {
                 const responseStatus = await changeSignaturePlan({ signature: selectedPlan.signature });
@@ -44,7 +48,7 @@ const Plan: React.FC = () => {
                         text1: 'Sucesso',
                         text2: 'Plano alterado com sucesso.',
                     });
-                    getSignature();
+                    await getSignature();
                 } else {
                     Toast.show({
                         type: 'error',
@@ -63,12 +67,16 @@ const Plan: React.FC = () => {
                 setModalVisible(false);
             }
         }
-    };
+    }, [selectedPlan, changeSignaturePlan, getSignature]);
 
-    const openConfirmationModal = (planType: UserSignatureRequest) => {
+    const openConfirmationModal = useCallback((planType: UserSignatureRequest) => {
         setSelectedPlan(planType);
         setModalVisible(true);
-    };
+    }, []);
+
+    const closeModal = useCallback(() => {
+        setModalVisible(false);
+    }, []);
 
     return (
         <Container>
@@ -76,9 +84,9 @@ const Plan: React.FC = () => {
 
             {userSignature ? (
                 <Card>
-                    <CardTitle>Plano Atual: {userSignature.signature}</CardTitle>
-                    <CardDescription>Início: {new Date(userSignature.signedAt).toLocaleDateString()}</CardDescription>
-                    <CardDescription>Documentos Cadastrados: {userSignature.documentCount}</CardDescription>
+                    <CardTitle>Plano Atual: {userSignature?.signature}</CardTitle>
+                    <CardDescription>Início: {new Date(userSignature?.signedAt).toLocaleDateString()}</CardDescription>
+                    <CardDescription>Documentos Cadastrados: {userSignature?.documentCount}</CardDescription>
                 </Card>
             ) : (
                 <Description>Carregando informações do plano atual...</Description>
@@ -103,7 +111,7 @@ const Plan: React.FC = () => {
                 visible={modalVisible}
                 transparent={true}
                 animationType="slide"
-                onRequestClose={() => setModalVisible(false)}
+                onRequestClose={closeModal}
             >
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
                     <View style={{ width: 300, padding: 20, backgroundColor: 'white', borderRadius: 10, alignItems: 'center' }}>
@@ -112,13 +120,13 @@ const Plan: React.FC = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
                             <TouchableOpacity
                                 style={{ padding: 10, backgroundColor: '#004aad', borderRadius: 5, marginRight: 10 }}
-                                onPress={handleConfirmPlanChange}
+                                onPress={() => handleConfirmPlanChange()}
                             >
                                 <Text style={{ color: 'white' }}>Confirmar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={{ padding: 10, backgroundColor: '#ddd', borderRadius: 5 }}
-                                onPress={() => setModalVisible(false)}
+                                onPress={closeModal}
                             >
                                 <Text>Cancelar</Text>
                             </TouchableOpacity>

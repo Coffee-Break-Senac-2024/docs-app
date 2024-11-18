@@ -1,11 +1,11 @@
 import axios from "axios";
 
 export const api = axios.create({
-    baseURL: 'http://ec2-54-158-18-101.compute-1.amazonaws.com:8080'
+    baseURL: 'http://ec2-3-214-55-54.compute-1.amazonaws.com:8080'
 });
 
 export const signatureApi = axios.create({
-    baseURL: 'http://ec2-44-223-156-236.compute-1.amazonaws.com:8081',
+    baseURL: 'http://ec2-52-205-92-101.compute-1.amazonaws.com:8081',
     responseType: 'json',
     withCredentials: true,
     headers: {

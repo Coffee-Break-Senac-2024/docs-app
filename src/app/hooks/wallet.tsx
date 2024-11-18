@@ -4,7 +4,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import forge from "node-forge";
 import { Alert } from "react-native";
-
 // Tipos
 interface FileWithUri {
     uri: string;
@@ -122,7 +121,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    const validateDocument = useCallback(async (documentId: string, documentName: string): Promise<string | null> => {
+    const validateDocument = async (documentId: string, documentName: string): Promise<string | null> => {
         try {
             const token = await getToken();
             if (!token) throw new Error("Token de autenticação não encontrado");
@@ -131,28 +130,36 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            const { hashRsa, publicKey } = response.data;
+            const { hash, hashRsa, publicKey } = response.data;
 
-            const signature = forge.util.decode64(hashRsa);
-            const publicKeyPem = `-----BEGIN PUBLIC KEY-----\n${publicKey}\n-----END PUBLIC KEY-----`;
-            const publicKeyObject = forge.pki.publicKeyFromPem(publicKeyPem);
+            const publicKeyBytes = forge.util.decode64(publicKey);
+
+            const publicKeyAsn1 = forge.asn1.fromDer(forge.util.createBuffer(publicKeyBytes));
+            const publicKeyObject = forge.pki.publicKeyFromAsn1(publicKeyAsn1);
+
+            const signatureBytes = forge.util.decode64(hashRsa);
 
             const md = forge.md.sha256.create();
-            md.update(signature, "utf8");
 
-            const isValid = publicKeyObject.verify(md.digest().bytes(), signature);
+            md.update(hash);
+
+            const isValid = publicKeyObject.verify(
+                md.digest().bytes(),
+                signatureBytes
+            );
+
             const message = isValid ? "Assinatura válida!" : "Assinatura inválida!";
-
             console.log(message);
-            await saveValidatedDocument(documentId, documentName, message);
 
+            await saveValidatedDocument(documentId, documentName, message);
             return message;
+
         } catch (err) {
             console.error("Erro ao validar documento:", err);
             setError("Erro ao validar o documento");
             return null;
         }
-    }, []);
+    };
 
     return (
         <WalletContext.Provider

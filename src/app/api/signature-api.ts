@@ -1,6 +1,6 @@
 import axios from "axios";
 
 export const signatureApi = axios.create({
-    baseURL: 'http://ec2-44-223-156-236.compute-1.amazonaws.com:8081'
+    baseURL: 'http://ec2-52-205-92-101.compute-1.amazonaws.com:8081'
 });
     
