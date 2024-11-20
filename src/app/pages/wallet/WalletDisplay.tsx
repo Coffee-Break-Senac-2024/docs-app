@@ -4,7 +4,7 @@ import { useWallet } from '../../hooks/wallet';
 import Toast from 'react-native-toast-message';
 
 const WalletDisplay: React.FC = () => {
-  const { getDocuments, downloadDocument, validateDocument, documents, error } = useWallet();
+  const { getDocuments, downloadDocument, validateDocument, getValidatedDocuments, documents, error } = useWallet();
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -38,11 +38,39 @@ const WalletDisplay: React.FC = () => {
 
   const handleValidate = async (documentId: string, documentName: string) => {
     try {
+      const validatedDocuments = await getValidatedDocuments();
+      const existingDocument = validatedDocuments.find((doc) => doc.id === documentId);
+
+      if (existingDocument) {
+        Toast.show({
+          type: 'info',
+          text1: 'Documento Já Validado',
+          text2: `O documento "${documentName}" já foi validado: ${existingDocument.message}`,
+        });
+        return;
+      }
+
       const validationMessage = await validateDocument(documentId, documentName);
-      Alert.alert('Validação', validationMessage || 'Erro ao validar o documento.');
+      if (validationMessage) {
+        Toast.show({
+          type: 'success',
+          text1: 'Documento Validado',
+          text2: `O documento "${documentName}" foi validado com sucesso.`,
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro na Validação',
+          text2: 'Não foi possível validar o documento.',
+        });
+      }
     } catch (error) {
       console.error("Erro ao validar documento:", error);
-      Alert.alert('Erro', 'Não foi possível validar o documento.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Houve um problema ao validar o documento.',
+      });
     }
   };
 
