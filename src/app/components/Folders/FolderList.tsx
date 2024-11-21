@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, ActivityIndicator, View, Modal, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import {
+  FlatList,
+  ActivityIndicator,
+  View,
+  Modal,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Platform,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
 import { useWallet } from '../../hooks/wallet';
@@ -13,19 +23,26 @@ const FolderList: React.FC = () => {
   const { getValidatedDocuments } = useWallet();
   const [validatedDocuments, setValidatedDocuments] = useState<any[]>([]);
 
-  useEffect(() => {
-    const fetchValidatedDocuments = async () => {
-      try {
-        setLoading(true);
-        const documents = await getValidatedDocuments();
-        setValidatedDocuments(documents);
-      } catch (err) {
-        setError('Erro ao carregar documentos validados.');
-      } finally {
-        setLoading(false);
+  const fetchValidatedDocuments = async () => {
+    try {
+      setLoading(true);
+      let documents: any[] = [];
+      if (Platform.OS === 'web') {
+        documents = await getValidatedDocuments();
+      } else {
+        const storedData = await AsyncStorage.getItem('@validatedDocuments');
+        documents = storedData ? JSON.parse(storedData) : [];
       }
-    };
+      setValidatedDocuments(documents);
+    } catch (err) {
+      console.error('Erro ao carregar documentos validados:', err);
+      setError('Erro ao carregar documentos validados.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchValidatedDocuments();
   }, [getValidatedDocuments]);
 
@@ -34,8 +51,15 @@ const FolderList: React.FC = () => {
     setModalVisible(true);
   };
 
-  const renderValidatedItem = ({ item }: { item: { id: string; documentName: string; message: string } }) => (
-    <TouchableOpacity style={styles.documentItem} onPress={() => handleDocumentClick(item)}>
+  const renderValidatedItem = ({
+    item,
+  }: {
+    item: { id: string; documentName: string; message: string };
+  }) => (
+    <TouchableOpacity
+      style={styles.documentItem}
+      onPress={() => handleDocumentClick(item)}
+    >
       <View style={styles.iconContainer}>
         <Icon name="document-text-outline" size={24} color="#004aad" />
       </View>
@@ -102,12 +126,20 @@ const FolderList: React.FC = () => {
                   size={150}
                   color="black"
                   backgroundColor="white"
+                  onError={(err) => {
+                    console.error('Erro ao renderizar QR Code:', err);
+                    setModalVisible(false);
+                  }}
                 />
+                <Text style={styles.modalDocumentName}>{selectedDocument.documentName}</Text>
               </View>
             ) : (
               <Text style={styles.emptyText}>Nenhum documento selecionado</Text>
             )}
-            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
               <Text style={styles.closeButtonText}>Fechar</Text>
             </TouchableOpacity>
           </View>

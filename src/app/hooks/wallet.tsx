@@ -1,9 +1,9 @@
 import React, { createContext, useCallback, useContext, useState } from "react";
-import { walletApi } from "../api/wallet-api";
+import { Platform, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as FileSystem from "expo-file-system";
+import { walletApi } from "../api/wallet-api";
 import forge from "node-forge";
-import { Alert } from "react-native";
+import * as FileSystem from "expo-file-system";
 import { AxiosError } from "axios";
 
 // Tipos
@@ -61,12 +61,33 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const getValidatedDocuments = async (): Promise<ValidatedDocument[]> => {
-    return validatedDocuments;
+    if (Platform.OS === "web") {
+      return validatedDocuments;
+    }
+    try {
+      const storedData = await AsyncStorage.getItem("@validatedDocuments");
+      return storedData ? JSON.parse(storedData) : [];
+    } catch (error) {
+      console.error("Erro ao buscar documentos validados:", error);
+      return [];
+    }
   };
 
-  const saveValidatedDocument = (documentId: string, documentName: string, message: string) => {
-    const updatedDocuments = [...validatedDocuments, { id: documentId, documentName, message }];
-    setValidatedDocuments(updatedDocuments);
+  const saveValidatedDocument = async (documentId: string, documentName: string, message: string) => {
+    const newDocument = { id: documentId, documentName, message };
+
+    if (Platform.OS === "web") {
+      setValidatedDocuments((prev) => [...prev, newDocument]);
+    } else {
+      try {
+        const storedData = await AsyncStorage.getItem("@validatedDocuments");
+        const parsedData = storedData ? JSON.parse(storedData) : [];
+        const updatedData = [...parsedData, newDocument];
+        await AsyncStorage.setItem("@validatedDocuments", JSON.stringify(updatedData));
+      } catch (error) {
+        console.error("Erro ao salvar documento validado:", error);
+      }
+    }
   };
 
   const getDocuments = useCallback(async (): Promise<Document[] | null> => {
@@ -110,12 +131,11 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
   const validateDocument = async (documentId: string, documentName: string): Promise<string | null> => {
     try {
-
-    const existingDocument = validatedDocuments.find((doc) => doc.id === documentId);
-        if (existingDocument) {
+      const existingDocument = validatedDocuments.find((doc) => doc.id === documentId);
+      if (existingDocument) {
         console.log("Documento já validado:", existingDocument);
         return existingDocument.message;
-    }
+      }
 
       const token = await getToken();
       if (!token) throw new Error("Token de autenticação não encontrado");
@@ -136,7 +156,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       const isValid = publicKeyObject.verify(md.digest().bytes(), signatureBytes);
       const message = isValid ? "Assinatura válida!" : "Assinatura inválida!";
 
-      saveValidatedDocument(documentId, documentName, message);
+      await saveValidatedDocument(documentId, documentName, message);
       return message;
     } catch (err) {
       console.error("Erro ao validar documento:", err);
