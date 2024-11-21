@@ -185,10 +185,10 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
             formData.append("file", blob, file.name || `arquivo-${Date.now()}.jpg`);
         } else {
             formData.append("file", {
-                uri: file.uri.startsWith("file://") ? file.uri : `file://${file.uri}`,
-                name: file.name || `arquivo-${Date.now()}.jpg`,
-                type: file.type || "application/octet-stream",
-            } as any);
+              uri: file.uri.startsWith("file://") ? file.uri : `file://${file.uri}`,
+              name: file.name || `arquivo-${Date.now()}.jpg`,
+              type: file.type || "application/octet-stream",
+          } as unknown as Blob);
         }
         
         formData.append("documentName", documentName);

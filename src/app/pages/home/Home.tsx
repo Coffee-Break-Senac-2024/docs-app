@@ -1,23 +1,11 @@
-import React, { useEffect } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import Layout from '../../pages/Layout/Layout';
+import withAutoReload from '../../components/withAutoReload';
 import FolderList from '../../components/Folders/FolderList';
+import Layout from '../../pages/Layout/Layout';
 
-const Home: React.FC = () => {
-  const navigation = useNavigation();
+const Home: React.FC = () => (
+  <Layout title="Bem-vindo!">
+    <FolderList />
+  </Layout>
+);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-    });
-
-    return unsubscribe;
-  }, [navigation]);
-
-  return (
-    <Layout title="Bem-vindo!">
-      <FolderList />
-    </Layout>
-  );
-};
-
-export default Home;
+export default withAutoReload(Home);

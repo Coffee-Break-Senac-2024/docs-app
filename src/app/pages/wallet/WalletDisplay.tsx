@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import withAutoReload from '../../components/withAutoReload';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Button, Alert } from 'react-native';
 import { useWallet } from '../../hooks/wallet';
 import Toast from 'react-native-toast-message';
@@ -152,4 +153,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WalletDisplay;
+export default  withAutoReload(WalletDisplay);
