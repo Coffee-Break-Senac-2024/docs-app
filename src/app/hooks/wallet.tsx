@@ -173,11 +173,24 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
           throw new Error("Token de autenticação não encontrado");
         }
 
+        
         const response = await fetch(file.uri);
         const blob = await response.blob();
 
         const formData = new FormData();
-        formData.append("file", blob, file.name);
+
+          if (Platform.OS === "web") {
+            const response = await fetch(file.uri);
+            const blob = await response.blob();
+            formData.append("file", blob, file.name || `arquivo-${Date.now()}.jpg`);
+        } else {
+            formData.append("file", {
+                uri: file.uri.startsWith("file://") ? file.uri : `file://${file.uri}`,
+                name: file.name || `arquivo-${Date.now()}.jpg`,
+                type: file.type || "application/octet-stream",
+            } as any);
+        }
+        
         formData.append("documentName", documentName);
         formData.append("walletDocumentType", walletDocumentType);
 
