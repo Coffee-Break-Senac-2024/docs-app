@@ -270,6 +270,15 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     documentName: string
   ): Promise<string | null> => {
     try {
+
+      const validatedDocuments = await getValidatedDocuments();
+      const existingDocument = validatedDocuments.find((doc) => doc.id === documentId);
+
+      if (existingDocument) {
+        console.log("Documento já foi baixado e validado:", existingDocument);
+        return existingDocument.message;
+      }
+
       const token = await getToken();
       if (!token) throw new Error("Token de autenticação não encontrado");
 
