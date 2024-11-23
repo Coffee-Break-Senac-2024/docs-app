@@ -45,7 +45,7 @@ const FolderList: React.FC = () => {
 
   const handleDocumentClick = (document: any) => {
     setSelectedDocument(document);
-    setViewMode('qrcode'); // Define o QR Code como visualização inicial
+    setViewMode('qrcode');
     setModalVisible(true);
   };
 
