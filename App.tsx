@@ -8,12 +8,9 @@ import Toast from 'react-native-toast-message';
 
 import Home from './src/app/pages/home/Home';
 import Profile from './src/app/pages/profile/Profile';
-import Files from './src/app/pages/files/Files';
 import Wallet from './src/app/pages/wallet/Wallet';
 import Login from './src/app/pages/login/Login';
 import SignUp from './src/app/pages/signUp/SignUp';
-import EditProfile from './src/app/pages/profile/EditProfile';
-import Plan from './src/app/pages/plans/Plan';
 import WalletDisplay from './src/app/pages/wallet/WalletDisplay';
 import DocumentCreate from './src/app/pages/wallet/WalletCreate';
 
@@ -41,8 +38,6 @@ const AuthenticatedTabs = () => (
                     iconName = 'home-outline';
                 } else if (route.name === 'Profile') {
                     iconName = 'person-outline';
-                } else if (route.name === 'Files') {
-                    iconName = 'folder-outline';
                 } else if (route.name === 'Wallet') {
                     iconName = 'wallet-outline';
                 }
@@ -51,7 +46,6 @@ const AuthenticatedTabs = () => (
         })}
     >
         <Tab.Screen name="Home" component={Home} options={{ title: 'Início' }} />
-        <Tab.Screen name="Files" component={Files} options={{ title: 'Meus Arquivos' }} />
         <Tab.Screen name="Wallet" component={Wallet} options={{ title: 'Carteira' }} />
         <Tab.Screen name="Profile" component={Profile} options={{ title: 'Perfil' }} />
     </Tab.Navigator>
@@ -82,8 +76,6 @@ const AppNavigator = () => {
                         component={AuthenticatedTabs}
                         options={{ headerShown: false }}
                     />
-                    <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar Perfil' }} />
-                    <Stack.Screen name="Plan" component={Plan} options={{ title: 'Alterar Plano' }} />
                     <Stack.Screen name="WalletDisplay" component={WalletDisplay} options={{ title: 'Exibir Documento' }} />
                     <Stack.Screen name="DocumentCreate" component={DocumentCreate} options={{ title: 'Cadastrar Documento' }} />
                 </>
