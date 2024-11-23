@@ -1,11 +1,9 @@
 import React, { createContext, useCallback, useContext, useState } from "react";
-import { Platform, Alert } from "react-native";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { walletApi } from "../api/wallet-api";
 import forge from "node-forge";
 import * as FileSystem from "expo-file-system";
-import { AxiosError } from "axios";
-
 
 // Tipos
 interface FileWithUri {
@@ -32,28 +30,31 @@ interface ValidatedDocument {
   id: string;
   documentName: string;
   message: string;
+  hash: string;
+  hashRsa: string;
+  publicKey: string;
+  imageUri?: string;
+  base64Image?: string;
 }
 
 interface WalletContextData {
   createDocument: (data: WalletDocumentRequest) => Promise<number | undefined>;
   getDocuments: () => Promise<Document[] | null>;
-  validateDocument: (documentId: string, documentName: string) => Promise<string | null>;
-  downloadDocument: (documentId: string, documentName: string) => Promise<void>;
-  downloadAndValidateDocument: (documentId: string, documentName: string) => Promise<string | null>;
+  downloadAndSaveDocument: (documentId: string, documentName: string) => Promise<string | null>;
+  validateOfflineDocument: (documentId: string) => Promise<string | null>;
   getValidatedDocuments: () => Promise<ValidatedDocument[]>;
   documents: Document[] | null;
   error: string | null;
 }
-
 
 // Contexto
 const WalletContext = createContext<WalletContextData>({} as WalletContextData);
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const [documents, setDocuments] = useState<Document[] | null>(null);
-  const [validatedDocuments, setValidatedDocuments] = useState<ValidatedDocument[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // Token
   const getToken = async (): Promise<string | null> => {
     try {
       return await AsyncStorage.getItem("@docs:token");
@@ -63,42 +64,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const getValidatedDocuments = async (): Promise<ValidatedDocument[]> => {
-    try {
-      const storedData = await AsyncStorage.getItem("@validatedDocuments");
-      return storedData ? JSON.parse(storedData) : [];
-    } catch (error) {
-      console.error("Erro ao buscar documentos validados:", error);
-      return [];
-    }
-  };
-  
-
-  const saveValidatedDocument = async (
-    documentId: string,
-    documentName: string,
-    message: string,
-    imageUri: string | null = null,
-    base64Image: string | null = null
-  ) => {
-    const newDocument = { id: documentId, documentName, message, imageUri, base64Image };
-  
-    if (Platform.OS === "web") {
-      setValidatedDocuments((prev) => [...prev, newDocument]);
-    } else {
-      try {
-        const storedData = await AsyncStorage.getItem("@validatedDocuments");
-        const parsedData = storedData ? JSON.parse(storedData) : [];
-        const updatedData = [...parsedData, newDocument];
-        await AsyncStorage.setItem("@validatedDocuments", JSON.stringify(updatedData));
-      } catch (error) {
-        console.error("Erro ao salvar documento validado:", error);
-      }
-    }
-  };
-  
-  
-
+  // Documentos
   const getDocuments = useCallback(async (): Promise<Document[] | null> => {
     try {
       const token = await getToken();
@@ -117,167 +83,69 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const downloadDocument = useCallback(async (documentId: string, documentName: string) => {
+  // Documentos validados
+  const getValidatedDocuments = async (): Promise<ValidatedDocument[]> => {
     try {
-      const downloadUrl = `http://ec2-52-201-168-41.compute-1.amazonaws.com:8082/api/user/wallet/download/${documentId}`;
-      const fileUri = `${FileSystem.documentDirectory}${documentName}`;
-
-      const token = await getToken();
-      if (!token) throw new Error("Token de autenticação não encontrado");
-
-      const response = await FileSystem.downloadAsync(downloadUrl, fileUri, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.status !== 200) throw new Error("Erro ao baixar o documento");
-
-      Alert.alert("Download concluído", `Arquivo salvo em: ${fileUri}`);
+      const storedData = await AsyncStorage.getItem("@validatedDocuments");
+      return storedData ? JSON.parse(storedData) : [];
     } catch (error) {
-      console.error("Erro ao baixar documento:", error);
-      setError("Erro ao baixar documento");
+      console.error("Erro ao buscar documentos validados:", error);
+      return [];
     }
-  }, []);
+  };
 
-  const validateDocument = async (documentId: string, documentName: string): Promise<string | null> => {
+  // Documentos inválidos
+  const getInvalidDocuments = async (): Promise<any[]> => {
     try {
-      const existingDocument = validatedDocuments.find((doc) => doc.id === documentId);
-      if (existingDocument) {
-        console.log("Documento já validado:", existingDocument);
-        return existingDocument.message;
-      }
-
-      const token = await getToken();
-      if (!token) throw new Error("Token de autenticação não encontrado");
-
-      const response = await walletApi.get(`/api/user/wallet/${documentId}/verify`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const { hash, hashRsa, publicKey } = response.data;
-
-      const publicKeyBytes = forge.util.decode64(publicKey);
-      const publicKeyAsn1 = forge.asn1.fromDer(forge.util.createBuffer(publicKeyBytes));
-      const publicKeyObject = forge.pki.publicKeyFromAsn1(publicKeyAsn1);
-      const signatureBytes = forge.util.decode64(hashRsa);
-      const md = forge.md.sha256.create();
-      md.update(hash);
-
-      const isValid = publicKeyObject.verify(md.digest().bytes(), signatureBytes);
-      const message = isValid ? "Assinatura válida!" : "Assinatura inválida!";
-
-      await saveValidatedDocument(documentId, documentName, message);
-      return message;
-    } catch (err) {
-      console.error("Erro ao validar documento:", err);
-      setError("Erro ao validar o documento");
-      return null;
+      const storedData = await AsyncStorage.getItem("@invalidDocuments");
+      return storedData ? JSON.parse(storedData) : [];
+    } catch (error) {
+      console.error("Erro ao buscar documentos inválidos:", error);
+      return [];
     }
   };
 
-  const createDocument = useCallback(
-    async ({ file, documentName, walletDocumentType }: WalletDocumentRequest): Promise<number | undefined> => {
-      try {
-        const token = await getToken();
-        if (!token) {
-          throw new Error("Token de autenticação não encontrado");
-        }
+  // Salvar documento inválido
+  const saveInvalidDocument = async (documentData: ValidatedDocument) => {
+    try {
+      const storedData = await AsyncStorage.getItem("@invalidDocuments");
+      const parsedData = storedData ? JSON.parse(storedData) : [];
+      const updatedData = [...parsedData.filter((doc: any) => doc.id !== documentData.id), documentData];
 
-        const response = await fetch(file.uri);
-        const blob = await response.blob();
-
-        const formData = new FormData();
-
-          if (Platform.OS === "web") {
-            const response = await fetch(file.uri);
-            const blob = await response.blob();
-            formData.append("file", blob, file.name || `arquivo-${Date.now()}.jpg`);
-        } else {
-            formData.append("file", {
-              uri: file.uri.startsWith("file://") ? file.uri : `file://${file.uri}`,
-              name: file.name || `arquivo-${Date.now()}.jpg`, 
-              type: file.type || "application/octet-stream",
-            } as any);
-        }
-        
-        formData.append("documentName", documentName);
-        formData.append("walletDocumentType", walletDocumentType);
-
-        const apiResponse = await walletApi.post("/api/user/wallet/create", formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (apiResponse.status === 201) {
-          setError(null);
-          return apiResponse.status;
-        } else {
-          setError("Erro ao cadastrar documento");
-          return apiResponse.status;
-        }
-      } catch (error) {
-        if (error instanceof AxiosError) {
-          setError(error.response?.data.message || "Erro ao cadastrar documento");
-          return error.response?.status || 500;
-        }
-        setError("Erro desconhecido ao cadastrar documento");
-        return 500;
-      }
-    },
-    []
-  );
-
-  const bytesToBase64 = (bytes: Uint8Array): string => {
-    let binary = "";
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
+      await AsyncStorage.setItem("@invalidDocuments", JSON.stringify(updatedData));
+      console.log(`Documento ${documentData.documentName} salvo como inválido para validação posterior.`);
+    } catch (error) {
+      console.error("Erro ao salvar documento inválido:", error);
     }
-    return btoa(binary);
   };
 
-  const saveImageToStorage = async (
+  // Salvar documento validado
+  const saveValidatedDocument = async (
     documentId: string,
     documentName: string,
-    base64Image: string
-  ): Promise<string> => {
-    const fileUri = `${FileSystem.documentDirectory}${documentId}_${documentName}.png`;
+    message: string,
+    hash: string,
+    hashRsa: string,
+    publicKey: string,
+    imageUri?: string,
+    base64Image?: string
+  ) => {
     try {
-      await FileSystem.writeAsStringAsync(fileUri, base64Image, { encoding: FileSystem.EncodingType.Base64 });
-      console.log("Imagem salva com sucesso:", fileUri);
-      return fileUri;
+      const newDocument: ValidatedDocument = { id: documentId, documentName, message, hash, hashRsa, publicKey, imageUri, base64Image };
+      const storedData = await AsyncStorage.getItem("@validatedDocuments");
+      const parsedData = storedData ? JSON.parse(storedData) : [];
+      const updatedData = [...parsedData.filter((doc: any) => doc.id !== documentId), newDocument];
+
+      await AsyncStorage.setItem("@validatedDocuments", JSON.stringify(updatedData));
+      console.log(`Documento ${documentName} salvo como validado.`);
     } catch (error) {
-      console.error("Erro ao salvar a imagem:", error);
-      throw new Error("Erro ao salvar a imagem no armazenamento.");
+      console.error("Erro ao salvar documento validado:", error);
     }
   };
 
-  const saveImageForWeb = async (documentId: string, documentName: string, base64Image: string) => {
-    const storageKey = "@webImages";
+  // Download e salvamento
+  const downloadAndSaveDocument = async (documentId: string, documentName: string): Promise<string | null> => {
     try {
-      const storedData = await AsyncStorage.getItem(storageKey);
-      const images = storedData ? JSON.parse(storedData) : [];
-      const updatedImages = [...images.filter((img: any) => img.id !== documentId), { id: documentId, documentName, base64Image }];
-      await AsyncStorage.setItem(storageKey, JSON.stringify(updatedImages));
-      console.log("Imagem salva com sucesso no ambiente web.");
-    } catch (error) {
-      console.error("Erro ao salvar imagem no ambiente web:", error);
-    }
-  };
-
-  const downloadAndValidateDocument = async (
-    documentId: string,
-    documentName: string
-  ): Promise<string | null> => {
-    try {
-
-      const validatedDocuments = await getValidatedDocuments();
-      const existingDocument = validatedDocuments.find((doc) => doc.id === documentId);
-
-      if (existingDocument) {
-        console.log("Documento já foi baixado e validado:", existingDocument);
-        return existingDocument.message;
-      }
-
       const token = await getToken();
       if (!token) throw new Error("Token de autenticação não encontrado");
 
@@ -299,11 +167,46 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         imageUri = await saveImageToStorage(documentId, documentName, base64Image);
       }
 
+      // Dados de validação
       const validationResponse = await walletApi.get(`/api/user/wallet/${documentId}/verify`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const { hash, hashRsa, publicKey } = validationResponse.data;
+
+      // Salvar como inválido
+      const invalidDocumentData = {
+        id: documentId,
+        documentName,
+        hash,
+        hashRsa,
+        publicKey,
+        imageUri,
+        base64Image,
+      };
+
+      await saveInvalidDocument(invalidDocumentData);
+
+      return "Documento baixado e salvo com sucesso para validação posterior";
+    } catch (error) {
+      console.error("Erro ao processar documento:", error);
+      setError("Erro ao processar o documento");
+      return null;
+    }
+  };
+
+  // Validação offline
+  const validateOfflineDocument = async (documentId: string): Promise<string | null> => {
+    try {
+      const invalidDocuments = await getInvalidDocuments();
+      const documentData = invalidDocuments.find((doc) => doc.id === documentId);
+
+      if (!documentData) {
+        throw new Error("Documento ou dados de validação não encontrados no armazenamento de inválidos.");
+      }
+
+      const { hash, hashRsa, publicKey, documentName, imageUri, base64Image } = documentData;
+
       const publicKeyBytes = forge.util.decode64(publicKey);
       const publicKeyAsn1 = forge.asn1.fromDer(forge.util.createBuffer(publicKeyBytes));
       const publicKeyObject = forge.pki.publicKeyFromAsn1(publicKeyAsn1);
@@ -314,24 +217,74 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       const isValid = publicKeyObject.verify(md.digest().bytes(), signatureBytes);
       const message = isValid ? "Assinatura válida!" : "Assinatura inválida!";
 
-      await saveValidatedDocument(documentId, documentName, message, imageUri, base64Image);
+      if (isValid) {
+        await saveValidatedDocument(
+          documentId,
+          documentName,
+          message,
+          hash,
+          hashRsa,
+          publicKey,
+          imageUri,
+          base64Image
+        );
+
+        const updatedInvalidDocuments = invalidDocuments.filter((doc) => doc.id !== documentId);
+        await AsyncStorage.setItem("@invalidDocuments", JSON.stringify(updatedInvalidDocuments));
+      }
 
       return message;
     } catch (error) {
-      console.error("Erro ao processar documento:", error);
-      setError("Erro ao processar o documento");
+      console.error("Erro ao validar documento offline:", error);
+      setError("Erro ao validar documento offline");
       return null;
+    }
+  };
+
+  // Conversão para Base64
+  const bytesToBase64 = (bytes: Uint8Array): string => {
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
+
+  // Salvar imagem no armazenamento
+  const saveImageToStorage = async (
+    documentId: string,
+    documentName: string,
+    base64Image: string
+  ): Promise<string> => {
+    const fileUri = `${FileSystem.documentDirectory}${documentId}_${documentName}.png`;
+    try {
+      await FileSystem.writeAsStringAsync(fileUri, base64Image, { encoding: FileSystem.EncodingType.Base64 });
+      return fileUri;
+    } catch (error) {
+      console.error("Erro ao salvar a imagem:", error);
+      throw new Error("Erro ao salvar a imagem no armazenamento.");
+    }
+  };
+
+  const saveImageForWeb = async (documentId: string, documentName: string, base64Image: string) => {
+    const storageKey = "@webImages";
+    try {
+      const storedData = await AsyncStorage.getItem(storageKey);
+      const images = storedData ? JSON.parse(storedData) : [];
+      const updatedImages = [...images.filter((img: any) => img.id !== documentId), { id: documentId, documentName, base64Image }];
+      await AsyncStorage.setItem(storageKey, JSON.stringify(updatedImages));
+    } catch (error) {
+      console.error("Erro ao salvar imagem no ambiente web:", error);
     }
   };
 
   return (
     <WalletContext.Provider
       value={{
-        createDocument,
+        createDocument: async () => undefined,
         getDocuments,
-        validateDocument,
-        downloadDocument,
-        downloadAndValidateDocument,
+        downloadAndSaveDocument,
+        validateOfflineDocument,
         getValidatedDocuments,
         documents,
         error,
@@ -341,7 +294,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     </WalletContext.Provider>
   );
 };
-  
+
 function useWallet(): WalletContextData {
   const context = useContext(WalletContext);
   if (!context) throw new Error("useWallet deve ser usado dentro de um WalletProvider");

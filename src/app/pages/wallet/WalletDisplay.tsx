@@ -12,12 +12,13 @@ import { useWallet } from '../../hooks/wallet';
 import Toast from 'react-native-toast-message';
 
 const WalletDisplay: React.FC = () => {
-  const { getDocuments, downloadAndValidateDocument, documents, error } = useWallet();
+  const { getDocuments, downloadAndSaveDocument, validateOfflineDocument } = useWallet();
   const [loading, setLoading] = useState(true);
   const [localDocuments, setLocalDocuments] = useState<any[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [loadingButtons, setLoadingButtons] = useState<{ [key: string]: boolean }>({});
 
+  // Função para buscar documentos na API
   const fetchDocuments = async () => {
     try {
       setLoading(true);
@@ -28,9 +29,9 @@ const WalletDisplay: React.FC = () => {
       } else {
         setFetchError('Não foi possível buscar os documentos.');
       }
-    } catch (err) {
+    } catch (error) {
       setFetchError('Erro ao buscar documentos. Por favor, tente novamente.');
-      console.error('Erro ao buscar documentos:', err);
+      console.error('Erro ao buscar documentos:', error);
     } finally {
       setLoading(false);
     }
@@ -40,38 +41,54 @@ const WalletDisplay: React.FC = () => {
     fetchDocuments();
   }, []);
 
-  const handleDownloadAndValidate = async (documentId: string, documentName: string) => {
+  // Função para exibir mensagens de notificação
+  const showToast = (type: 'success' | 'error', title: string, message: string) => {
+    Toast.show({
+      type,
+      text1: title,
+      text2: message,
+    });
+  };
+
+  // Função para baixar documentos
+  const handleDownload = async (documentId: string, documentName: string) => {
     setLoadingButtons((prev) => ({ ...prev, [documentId]: true }));
     try {
-      const validationMessage = await downloadAndValidateDocument(documentId, documentName);
+      const downloadMessage = await downloadAndSaveDocument(documentId, documentName);
 
-      if (validationMessage) {
-        Toast.show({
-          type: 'success',
-          text1: 'Operação Concluída',
-          text2: `O documento "${documentName}" foi baixado e validado: ${validationMessage}`,
-        });
-        
-        fetchDocuments();
+      if (downloadMessage) {
+        showToast('success', 'Download Concluído', `O documento "${documentName}" foi baixado com sucesso.`);
       } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro',
-          text2: 'Não foi possível baixar ou validar o documento.',
-        });
+        showToast('error', 'Erro', 'Não foi possível baixar o documento.');
       }
     } catch (error) {
-      console.error('Erro ao baixar e validar documento:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Houve um problema ao processar o documento.',
-      });
+      console.error('Erro ao baixar documento:', error);
+      showToast('error', 'Erro', 'Houve um problema ao baixar o documento.');
     } finally {
       setLoadingButtons((prev) => ({ ...prev, [documentId]: false }));
     }
   };
 
+  // Função para validar documentos
+  const handleValidate = async (documentId: string, documentName: string) => {
+    setLoadingButtons((prev) => ({ ...prev, [documentId]: true }));
+    try {
+      const validationMessage = await validateOfflineDocument(documentId);
+
+      if (validationMessage) {
+        showToast('success', 'Validação Concluída', `O documento "${documentName}" foi validado: ${validationMessage}`);
+      } else {
+        showToast('error', 'Erro', 'Não foi possível validar o documento.');
+      }
+    } catch (error) {
+      console.error('Erro ao validar documento:', error);
+      showToast('error', 'Erro', 'Houve um problema ao validar o documento.');
+    } finally {
+      setLoadingButtons((prev) => ({ ...prev, [documentId]: false }));
+    }
+  };
+
+  // Renderização da tela com base no estado
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -102,6 +119,7 @@ const WalletDisplay: React.FC = () => {
     );
   }
 
+  // Renderização da lista de documentos
   return (
     <View style={styles.container}>
       <Text style={styles.headerText}>Documentos</Text>
@@ -110,18 +128,26 @@ const WalletDisplay: React.FC = () => {
         keyExtractor={(item, index) => `${item.id}-${index}`}
         renderItem={({ item }) => (
           <View style={styles.documentItem}>
-            <Text style={styles.documentName}>Nome do Documento: {item.documentName}</Text>
+            <Text style={styles.documentName}>Nome: {item.documentName}</Text>
             <Text style={styles.documentType}>Tipo: {item.walletDocumentType}</Text>
             <View style={styles.buttonContainer}>
               {loadingButtons[item.id] ? (
                 <ActivityIndicator size="small" color="#007BFF" />
               ) : (
-                <TouchableOpacity
-                  style={styles.downloadButton}
-                  onPress={() => handleDownloadAndValidate(item.id, item.documentName)}
-                >
-                  <Text style={styles.downloadButtonText}>Baixar e Validar</Text>
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    style={styles.downloadButton}
+                    onPress={() => handleDownload(item.id, item.documentName)}
+                  >
+                    <Text style={styles.downloadButtonText}>Baixar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.validateButton}
+                    onPress={() => handleValidate(item.id, item.documentName)}
+                  >
+                    <Text style={styles.validateButtonText}>Validar</Text>
+                  </TouchableOpacity>
+                </>
               )}
             </View>
           </View>
@@ -132,6 +158,7 @@ const WalletDisplay: React.FC = () => {
   );
 };
 
+// Estilização
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -143,6 +170,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#004aad',
   },
   errorText: {
     color: 'red',
@@ -180,10 +208,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
+    borderLeftWidth: 4,
+    borderLeftColor: '#004aad',
   },
   documentName: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 5,
+    color: '#333',
   },
   documentType: {
     fontSize: 14,
@@ -195,12 +227,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   downloadButton: {
+    flex: 1,
+    marginRight: 5,
     paddingVertical: 10,
-    paddingHorizontal: 20,
     backgroundColor: '#007BFF',
     borderRadius: 5,
   },
   downloadButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  validateButton: {
+    flex: 1,
+    marginLeft: 5,
+    paddingVertical: 10,
+    backgroundColor: '#28a745',
+    borderRadius: 5,
+  },
+  validateButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
