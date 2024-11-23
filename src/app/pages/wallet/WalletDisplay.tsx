@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import withAutoReload from '../../components/withAutoReload';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Button } from 'react-native';
 import { useWallet } from '../../hooks/wallet';
 import Toast from 'react-native-toast-message';
 
 const WalletDisplay: React.FC = () => {
-  const { getDocuments, downloadDocument, validateDocument, getValidatedDocuments, documents, error } = useWallet();
+  const { getDocuments, downloadAndValidateDocument, getValidatedDocuments, documents, error } = useWallet();
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -19,58 +19,29 @@ const WalletDisplay: React.FC = () => {
     fetchDocuments();
   }, [getDocuments]);
 
-  const handleDownload = async (documentId: string, documentName: string) => {
+  const handleDownloadAndValidate = async (documentId: string, documentName: string) => {
     try {
-      await downloadDocument(documentId, documentName);
-      Toast.show({
-        type: 'success',
-        text1: 'Download concluído',
-        text2: `O documento "${documentName}" foi baixado com sucesso.`,
-      });
-    } catch (error) {
-      console.error("Erro ao baixar documento:", error);
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Não foi possível baixar o documento.',
-      });
-    }
-  };
+      const validationMessage = await downloadAndValidateDocument(documentId, documentName);
 
-  const handleValidate = async (documentId: string, documentName: string) => {
-    try {
-      const validatedDocuments = await getValidatedDocuments();
-      const existingDocument = validatedDocuments.find((doc) => doc.id === documentId);
-
-      if (existingDocument) {
-        Toast.show({
-          type: 'info',
-          text1: 'Documento Já Validado',
-          text2: `O documento "${documentName}" já foi validado: ${existingDocument.message}`,
-        });
-        return;
-      }
-
-      const validationMessage = await validateDocument(documentId, documentName);
       if (validationMessage) {
         Toast.show({
           type: 'success',
-          text1: 'Documento Validado',
-          text2: `O documento "${documentName}" foi validado com sucesso.`,
+          text1: 'Operação Concluída',
+          text2: `O documento "${documentName}" foi baixado e validado: ${validationMessage}`,
         });
       } else {
         Toast.show({
           type: 'error',
-          text1: 'Erro na Validação',
-          text2: 'Não foi possível validar o documento.',
+          text1: 'Erro',
+          text2: 'Não foi possível baixar ou validar o documento.',
         });
       }
     } catch (error) {
-      console.error("Erro ao validar documento:", error);
+      console.error("Erro ao baixar e validar documento:", error);
       Toast.show({
         type: 'error',
         text1: 'Erro',
-        text2: 'Houve um problema ao validar o documento.',
+        text2: 'Houve um problema ao processar o documento.',
       });
     }
   };
@@ -83,20 +54,15 @@ const WalletDisplay: React.FC = () => {
       ) : documents ? (
         <FlatList
           data={documents}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
           renderItem={({ item }) => (
             <View style={styles.documentItem}>
               <Text style={styles.documentName}>Nome do Documento: {item.documentName}</Text>
               <Text style={styles.documentType}>Tipo: {item.walletDocumentType}</Text>
               <View style={styles.buttonContainer}>
                 <Button
-                  title="Baixar"
-                  onPress={() => handleDownload(item.id, item.documentName)}
-                  color="#004aad"
-                />
-                <Button
-                  title="Validar"
-                  onPress={() => handleValidate(item.id, item.documentName)}
+                  title="Baixar e Validar"
+                  onPress={() => handleDownloadAndValidate(item.id, item.documentName)}
                   color="#007BFF"
                 />
               </View>
@@ -153,4 +119,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default  withAutoReload(WalletDisplay);
+export default withAutoReload(WalletDisplay);

@@ -8,6 +8,7 @@ import {
   Text,
   StyleSheet,
   Platform,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -19,6 +20,7 @@ const FolderList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [viewMode, setViewMode] = useState<'qrcode' | 'document'>('qrcode');
 
   const { getValidatedDocuments } = useWallet();
   const [validatedDocuments, setValidatedDocuments] = useState<any[]>([]);
@@ -26,13 +28,8 @@ const FolderList: React.FC = () => {
   const fetchValidatedDocuments = async () => {
     try {
       setLoading(true);
-      let documents: any[] = [];
-      if (Platform.OS === 'web') {
-        documents = await getValidatedDocuments();
-      } else {
-        const storedData = await AsyncStorage.getItem('@validatedDocuments');
-        documents = storedData ? JSON.parse(storedData) : [];
-      }
+      const storedData = await AsyncStorage.getItem('@validatedDocuments');
+      const documents = storedData ? JSON.parse(storedData) : [];
       setValidatedDocuments(documents);
     } catch (err) {
       console.error('Erro ao carregar documentos validados:', err);
@@ -44,18 +41,19 @@ const FolderList: React.FC = () => {
 
   useEffect(() => {
     fetchValidatedDocuments();
-  }, [getValidatedDocuments]);
+  }, []);
 
   const handleDocumentClick = (document: any) => {
     setSelectedDocument(document);
+    setViewMode('qrcode'); // Define o QR Code como visualização inicial
     setModalVisible(true);
   };
 
-  const renderValidatedItem = ({
-    item,
-  }: {
-    item: { id: string; documentName: string; message: string };
-  }) => (
+  const getFormattedUri = (uri: string): string => {
+    return uri.startsWith('file://') ? uri : `file://${uri}`;
+  };
+
+  const renderValidatedItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.documentItem}
       onPress={() => handleDocumentClick(item)}
@@ -107,7 +105,7 @@ const FolderList: React.FC = () => {
       <FlatList
         data={validatedDocuments}
         renderItem={renderValidatedItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
       />
@@ -121,17 +119,52 @@ const FolderList: React.FC = () => {
           <View style={styles.modalContent}>
             {selectedDocument ? (
               <View style={styles.modalBody}>
-                <QRCode
-                  value={`Documento: ${selectedDocument.documentName}\nStatus: ${selectedDocument.message}`}
-                  size={150}
-                  color="black"
-                  backgroundColor="white"
-                  onError={(err) => {
-                    console.error('Erro ao renderizar QR Code:', err);
-                    setModalVisible(false);
-                  }}
-                />
+                {viewMode === 'qrcode' ? (
+                  <QRCode
+                    value={`Documento: ${selectedDocument.documentName}\nStatus: ${selectedDocument.message}`}
+                    size={150}
+                    color="black"
+                    backgroundColor="white"
+                    onError={(err) => {
+                      console.error('Erro ao renderizar QR Code:', err);
+                      setModalVisible(false);
+                    }}
+                  />
+                ) : selectedDocument.imageUri || selectedDocument.base64Image ? (
+                  <Image
+                    source={
+                      Platform.OS === 'web'
+                        ? { uri: `data:image/png;base64,${selectedDocument.base64Image}` }
+                        : { uri: getFormattedUri(selectedDocument.imageUri) }
+                    }
+                    style={styles.imagePreview}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <Text style={styles.emptyText}>Imagem não disponível</Text>
+                )}
                 <Text style={styles.modalDocumentName}>{selectedDocument.documentName}</Text>
+                <Text style={styles.modalDocumentStatus}>{selectedDocument.message}</Text>
+                <View style={styles.buttonGroup}>
+                  <TouchableOpacity
+                    style={[
+                      styles.switchButton,
+                      viewMode === 'qrcode' && styles.activeButton,
+                    ]}
+                    onPress={() => setViewMode('qrcode')}
+                  >
+                    <Text style={styles.switchButtonText}>Exibir QR Code</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.switchButton,
+                      viewMode === 'document' && styles.activeButton,
+                    ]}
+                    onPress={() => setViewMode('document')}
+                  >
+                    <Text style={styles.switchButtonText}>Exibir Documento</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ) : (
               <Text style={styles.emptyText}>Nenhum documento selecionado</Text>
@@ -234,6 +267,29 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 16,
     textAlign: 'center',
+  },
+  imagePreview: {
+    width: 200,
+    height: 200,
+    marginVertical: 10,
+    borderRadius: 8,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    marginTop: 10,
+  },
+  switchButton: {
+    padding: 10,
+    backgroundColor: '#ddd',
+    borderRadius: 5,
+    marginHorizontal: 5,
+  },
+  activeButton: {
+    backgroundColor: '#004aad',
+  },
+  switchButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   closeButton: {
     marginTop: 20,

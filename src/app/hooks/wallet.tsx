@@ -6,6 +6,7 @@ import forge from "node-forge";
 import * as FileSystem from "expo-file-system";
 import { AxiosError } from "axios";
 
+
 // Tipos
 interface FileWithUri {
   uri: string;
@@ -38,10 +39,12 @@ interface WalletContextData {
   getDocuments: () => Promise<Document[] | null>;
   validateDocument: (documentId: string, documentName: string) => Promise<string | null>;
   downloadDocument: (documentId: string, documentName: string) => Promise<void>;
+  downloadAndValidateDocument: (documentId: string, documentName: string) => Promise<string | null>;
   getValidatedDocuments: () => Promise<ValidatedDocument[]>;
   documents: Document[] | null;
   error: string | null;
 }
+
 
 // Contexto
 const WalletContext = createContext<WalletContextData>({} as WalletContextData);
@@ -61,9 +64,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const getValidatedDocuments = async (): Promise<ValidatedDocument[]> => {
-    if (Platform.OS === "web") {
-      return validatedDocuments;
-    }
     try {
       const storedData = await AsyncStorage.getItem("@validatedDocuments");
       return storedData ? JSON.parse(storedData) : [];
@@ -72,10 +72,17 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       return [];
     }
   };
+  
 
-  const saveValidatedDocument = async (documentId: string, documentName: string, message: string) => {
-    const newDocument = { id: documentId, documentName, message };
-
+  const saveValidatedDocument = async (
+    documentId: string,
+    documentName: string,
+    message: string,
+    imageUri: string | null = null,
+    base64Image: string | null = null
+  ) => {
+    const newDocument = { id: documentId, documentName, message, imageUri, base64Image };
+  
     if (Platform.OS === "web") {
       setValidatedDocuments((prev) => [...prev, newDocument]);
     } else {
@@ -89,6 +96,8 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
   };
+  
+  
 
   const getDocuments = useCallback(async (): Promise<Document[] | null> => {
     try {
@@ -219,6 +228,94 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     []
   );
 
+  const bytesToBase64 = (bytes: Uint8Array): string => {
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
+
+  const saveImageToStorage = async (
+    documentId: string,
+    documentName: string,
+    base64Image: string
+  ): Promise<string> => {
+    const fileUri = `${FileSystem.documentDirectory}${documentId}_${documentName}.png`;
+    try {
+      await FileSystem.writeAsStringAsync(fileUri, base64Image, { encoding: FileSystem.EncodingType.Base64 });
+      console.log("Imagem salva com sucesso:", fileUri);
+      return fileUri;
+    } catch (error) {
+      console.error("Erro ao salvar a imagem:", error);
+      throw new Error("Erro ao salvar a imagem no armazenamento.");
+    }
+  };
+
+  const saveImageForWeb = async (documentId: string, documentName: string, base64Image: string) => {
+    const storageKey = "@webImages";
+    try {
+      const storedData = await AsyncStorage.getItem(storageKey);
+      const images = storedData ? JSON.parse(storedData) : [];
+      const updatedImages = [...images.filter((img: any) => img.id !== documentId), { id: documentId, documentName, base64Image }];
+      await AsyncStorage.setItem(storageKey, JSON.stringify(updatedImages));
+      console.log("Imagem salva com sucesso no ambiente web.");
+    } catch (error) {
+      console.error("Erro ao salvar imagem no ambiente web:", error);
+    }
+  };
+
+  const downloadAndValidateDocument = async (
+    documentId: string,
+    documentName: string
+  ): Promise<string | null> => {
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Token de autenticação não encontrado");
+
+      const downloadUrl = `http://ec2-52-201-168-41.compute-1.amazonaws.com:8082/api/user/wallet/download/${documentId}`;
+      const response = await walletApi.get(downloadUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "arraybuffer",
+      });
+
+      const byteArray = new Uint8Array(response.data);
+      let imageUri: string | null = null;
+      let base64Image: string | null = null;
+
+      if (Platform.OS === "web") {
+        base64Image = bytesToBase64(byteArray);
+        await saveImageForWeb(documentId, documentName, base64Image);
+      } else {
+        base64Image = bytesToBase64(byteArray);
+        imageUri = await saveImageToStorage(documentId, documentName, base64Image);
+      }
+
+      const validationResponse = await walletApi.get(`/api/user/wallet/${documentId}/verify`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const { hash, hashRsa, publicKey } = validationResponse.data;
+      const publicKeyBytes = forge.util.decode64(publicKey);
+      const publicKeyAsn1 = forge.asn1.fromDer(forge.util.createBuffer(publicKeyBytes));
+      const publicKeyObject = forge.pki.publicKeyFromAsn1(publicKeyAsn1);
+      const signatureBytes = forge.util.decode64(hashRsa);
+      const md = forge.md.sha256.create();
+      md.update(hash);
+
+      const isValid = publicKeyObject.verify(md.digest().bytes(), signatureBytes);
+      const message = isValid ? "Assinatura válida!" : "Assinatura inválida!";
+
+      await saveValidatedDocument(documentId, documentName, message, imageUri, base64Image);
+
+      return message;
+    } catch (error) {
+      console.error("Erro ao processar documento:", error);
+      setError("Erro ao processar o documento");
+      return null;
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -226,6 +323,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         getDocuments,
         validateDocument,
         downloadDocument,
+        downloadAndValidateDocument,
         getValidatedDocuments,
         documents,
         error,
@@ -235,7 +333,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     </WalletContext.Provider>
   );
 };
-
+  
 function useWallet(): WalletContextData {
   const context = useContext(WalletContext);
   if (!context) throw new Error("useWallet deve ser usado dentro de um WalletProvider");
