@@ -31,7 +31,7 @@ const Wallet: React.FC = () => {
 
   const { createDocument, error } = useWallet();
 
-  const documentTypes = ['RG', 'CNH', 'CPF'];
+  const documentTypes = ['RG', 'CNH'];
 
   const handleFileUpload = async () => {
     launchImageLibrary(

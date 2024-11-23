@@ -51,7 +51,7 @@ const WalletDisplay: React.FC = () => {
           text1: 'Operação Concluída',
           text2: `O documento "${documentName}" foi baixado e validado: ${validationMessage}`,
         });
-        // Atualiza a lista de documentos locais após validação
+        
         fetchDocuments();
       } else {
         Toast.show({
