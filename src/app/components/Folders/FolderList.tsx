@@ -13,6 +13,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
+import { useNavigation } from '@react-navigation/native';
 
 const FolderList: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -20,8 +21,8 @@ const FolderList: React.FC = () => {
   const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [viewMode, setViewMode] = useState<'qrcode' | 'document'>('qrcode');
-
   const [validatedDocuments, setValidatedDocuments] = useState<any[]>([]);
+  const navigation = useNavigation();
 
   const fetchValidatedDocuments = async () => {
     try {
@@ -45,6 +46,10 @@ const FolderList: React.FC = () => {
     setSelectedDocument(document);
     setViewMode('qrcode');
     setModalVisible(true);
+  };
+
+  const navigateToExibirDocumentos = () => {
+    navigation.navigate('WalletDisplay' as never);
   };
 
   const getFormattedUri = (uri: string): string => {
@@ -84,7 +89,10 @@ const FolderList: React.FC = () => {
   if (validatedDocuments.length === 0) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.emptyText}>Nenhum documento baixado!.</Text>
+        <Text style={styles.emptyText}>Nenhum documento baixado!</Text>
+        <TouchableOpacity style={styles.navigateButton} onPress={navigateToExibirDocumentos}>
+          <Text style={styles.navigateButtonText}>Exibir Documentos</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -119,7 +127,7 @@ const FolderList: React.FC = () => {
                       publicKey: selectedDocument.publicKey,
                       message: selectedDocument.message,
                     })}
-                    size={150}
+                    size={250}
                     color="black"
                     backgroundColor="white"
                     onError={(err) => {
@@ -179,7 +187,6 @@ const FolderList: React.FC = () => {
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -237,6 +244,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#555',
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  navigateButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#004aad',
+    borderRadius: 8,
+  },
+  navigateButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -267,8 +287,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   imagePreview: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
     marginVertical: 10,
     borderRadius: 8,
   },
