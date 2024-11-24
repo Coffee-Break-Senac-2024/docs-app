@@ -13,7 +13,6 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
-import { useNavigation } from '@react-navigation/native';
 
 const FolderList: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -21,29 +20,25 @@ const FolderList: React.FC = () => {
   const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [viewMode, setViewMode] = useState<'qrcode' | 'document'>('qrcode');
-  const [downloadedDocuments, setDownloadedDocuments] = useState<any[]>([]);
-  const navigation = useNavigation();
 
-  const fetchDownloadedDocuments = async () => {
+  const [validatedDocuments, setValidatedDocuments] = useState<any[]>([]);
+
+  const fetchValidatedDocuments = async () => {
     try {
       setLoading(true);
       const storedData = await AsyncStorage.getItem('@validatedDocuments');
       const documents = storedData ? JSON.parse(storedData) : [];
-      if (documents.length === 0) {
-        navigation.navigate('ExibirDocumentos'); // Redireciona para a página de exibição
-      } else {
-        setDownloadedDocuments(documents);
-      }
+      setValidatedDocuments(documents);
     } catch (err) {
-      console.error('Erro ao carregar documentos baixados:', err);
-      setError('Erro ao carregar documentos baixados.');
+      console.error('Erro ao carregar documentos validados:', err);
+      setError('Erro ao carregar documentos validados.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDownloadedDocuments();
+    fetchValidatedDocuments();
   }, []);
 
   const handleDocumentClick = (document: any) => {
@@ -56,7 +51,7 @@ const FolderList: React.FC = () => {
     return uri.startsWith('file://') ? uri : `file://${uri}`;
   };
 
-  const renderDownloadedItem = ({ item }: { item: any }) => (
+  const renderValidatedItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.documentItem}
       onPress={() => handleDocumentClick(item)}
@@ -66,7 +61,6 @@ const FolderList: React.FC = () => {
       </View>
       <View style={styles.documentInfo}>
         <Text style={styles.documentName}>{item.documentName}</Text>
-        <Text style={styles.documentStatus}>{item.message}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -87,12 +81,20 @@ const FolderList: React.FC = () => {
     );
   }
 
+  if (validatedDocuments.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.emptyText}>Nenhum documento baixado!.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Documentos Baixados</Text>
+      <Text style={styles.header}>Meus Documentos</Text>
       <FlatList
-        data={downloadedDocuments}
-        renderItem={renderDownloadedItem}
+        data={validatedDocuments}
+        renderItem={renderValidatedItem}
         keyExtractor={(item, index) => `${item.id}-${index}`}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
@@ -109,7 +111,14 @@ const FolderList: React.FC = () => {
               <View style={styles.modalBody}>
                 {viewMode === 'qrcode' ? (
                   <QRCode
-                    value={`Documento: ${selectedDocument.documentName}\nStatus: ${selectedDocument.message}\nHash: ${selectedDocument.hash}\nHash RSA: ${selectedDocument.hashRsa}\nPublic Key: ${selectedDocument.publicKey}`}
+                    value={JSON.stringify({
+                      id: selectedDocument.id,
+                      documentName: selectedDocument.documentName,
+                      hash: selectedDocument.hash,
+                      hashRsa: selectedDocument.hashRsa,
+                      publicKey: selectedDocument.publicKey,
+                      message: selectedDocument.message,
+                    })}
                     size={150}
                     color="black"
                     backgroundColor="white"
@@ -169,6 +178,7 @@ const FolderList: React.FC = () => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
