@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import Toast from 'react-native-toast-message';
-import { useNavigation } from '@react-navigation/native'; 
+import { useNavigation } from '@react-navigation/native';
 import { TextInputMask } from 'react-native-masked-text';
 import { AuthContext } from '../../hooks/auth';
 import {
@@ -11,9 +11,9 @@ import {
   Title,
 } from './styles';
 
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-const isValidPassword = (password) => {
+const isValidPassword = (password: string) => {
   if (password.length < 8) {
     return { valid: false, message: 'A senha deve ter pelo menos 8 caracteres.' };
   }
@@ -32,7 +32,7 @@ const isValidPassword = (password) => {
   return { valid: true, message: '' };
 };
 
-const removeCpfMask = (cpf) => cpf.replace(/\D/g, '');
+const removeCpfMask = (cpf: string) => cpf.replace(/\D/g, '');
 
 const SignUp = () => {
   const { signUp, loading } = useContext(AuthContext);

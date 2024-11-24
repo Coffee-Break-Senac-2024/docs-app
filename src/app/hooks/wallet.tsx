@@ -116,9 +116,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
             const token = await getToken();
             if (!token) throw new Error("Token de autenticação não encontrado");
 
-            const downloadUrl = `http://ec2-52-201-168-41.compute-1.amazonaws.com:8082/api/user/wallet/download/${documentId}`;
-            
-            const response = await walletApi.get(downloadUrl, {
+            const response = await walletApi.get(`/api/user/wallet/download/${documentId}`, {
                 headers: { Authorization: `Bearer ${token}` },
                 responseType: "arraybuffer",
             });
@@ -196,13 +194,20 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     const createDocument = useCallback(async (data: WalletDocumentRequest): Promise<number | undefined> => {
         const formData = new FormData();
 
-        const file = JSON.parse(JSON.stringify({
-            name: data.file.name,
-            uri: data.file.uri,
-            type: data.file.type
-        }));
-        
-        formData.append('file', file);
+        if (Platform.OS === "web") {
+            const response = await fetch(data.file.uri || '');
+            const blob = await response.blob();
+            formData.append('file', blob);
+        } else {
+            const file = JSON.parse(JSON.stringify({
+                name: data.file.name,
+                uri: data.file.uri,
+                type: data.file.type
+            }));
+
+            formData.append('file', file);
+        }
+
         formData.append('documentName', data.documentName);
         formData.append('walletDocumentType', data.walletDocumentType);
 
