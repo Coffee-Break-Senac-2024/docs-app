@@ -5,7 +5,6 @@ import { walletApi } from "../api/wallet-api";
 import * as FileSystem from "expo-file-system";
 import { AxiosError } from "axios";
 
-// Tipos
 interface FileWithUri {
     uri: string | undefined;
     name: string;
@@ -46,14 +45,13 @@ interface WalletContextData {
     error: string | null;
 }
 
-// Contexto
 const WalletContext = createContext<WalletContextData>({} as WalletContextData);
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     const [documents, setDocuments] = useState<Document[] | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // Recupera o token
+
     const getToken = async (): Promise<string | null> => {
         try {
             return await AsyncStorage.getItem("@docs:token");
@@ -63,7 +61,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    // Busca os documentos do usuário
     const getDocuments = useCallback(async (): Promise<Document[] | null> => {
         try {
             const token = await getToken();
@@ -82,7 +79,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, []);
 
-    // Busca documentos salvos localmente
     const getValidatedDocuments = async (): Promise<ValidatedDocument[]> => {
         try {
             const storedData = await AsyncStorage.getItem("@validatedDocuments");
@@ -93,7 +89,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    // Salva documento validado
     const saveDocument = async (document: ValidatedDocument) => {
         try {
             const storedData = await AsyncStorage.getItem("@validatedDocuments");
@@ -107,7 +102,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    // Download e salvamento do documento
     const downloadAndSaveDocument = async (documentId: string, documentName: string): Promise<string | null> => {
         try {
             const token = await getToken();
@@ -115,7 +109,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
             const downloadUrl = `http://ec2-52-201-168-41.compute-1.amazonaws.com:8082/api/user/wallet/download/${documentId}`;
             
-            // Download do documento
             const response = await walletApi.get(downloadUrl, {
                 headers: { Authorization: `Bearer ${token}` },
                 responseType: "arraybuffer",
@@ -125,7 +118,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
             let imageUri: string | null = null;
             let base64Image: string | null = null;
 
-            // Armazena a imagem dependendo da plataforma
             if (Platform.OS === "web") {
                 base64Image = bytesToBase64(byteArray);
                 await saveImageForWeb(documentId, documentName, base64Image);
@@ -134,14 +126,12 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
                 imageUri = await saveImageToStorage(documentId, documentName, base64Image);
             }
 
-            // Busca dados de validação
             const validationResponse = await walletApi.get(`/api/user/wallet/${documentId}/verify`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
             const { hash, hashRsa, publicKey } = validationResponse.data;
 
-            // Salva os dados com as informações obtidas
             const savedDocument: ValidatedDocument = {
                 id: documentId,
                 documentName,
@@ -155,7 +145,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
             await saveDocument(savedDocument);
 
-            return `Documento ${documentName} baixado e salvo com sucesso com dados de validação.`;
+            return `Documento ${documentName} baixado e salvo com sucesso!`;
         } catch (error) {
             console.error("Erro ao processar documento:", error);
             setError("Erro ao processar o documento");
@@ -163,7 +153,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    // Converte bytes para Base64
     const bytesToBase64 = (bytes: Uint8Array): string => {
         let binary = "";
         for (let i = 0; i < bytes.byteLength; i++) {
@@ -172,7 +161,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         return btoa(binary);
     };
 
-    // Salva imagem no dispositivo
     const saveImageToStorage = async (documentId: string, documentName: string, base64Image: string): Promise<string> => {
         const fileUri = `${FileSystem.documentDirectory}${documentId}_${documentName}.png`;
         try {
@@ -184,7 +172,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    // Salva imagem no armazenamento web
     const saveImageForWeb = async (documentId: string, documentName: string, base64Image: string) => {
         const storageKey = "@webImages";
         try {
@@ -197,7 +184,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    // Cria um documento
     const createDocument = useCallback(async (data: WalletDocumentRequest): Promise<number | undefined> => {
         const formData = new FormData();
 
