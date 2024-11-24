@@ -200,9 +200,14 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     // Cria um documento
     const createDocument = useCallback(async (data: WalletDocumentRequest): Promise<number | undefined> => {
         const formData = new FormData();
-        const response = await fetch(data.file.uri || '');
-        const blob = await response.blob();
-        formData.append('file', blob);
+
+        const file = JSON.parse(JSON.stringify({
+            name: data.file.name,
+            uri: data.file.uri,
+            type: data.file.type
+        }));
+        
+        formData.append('file', file);
         formData.append('documentName', data.documentName);
         formData.append('walletDocumentType', data.walletDocumentType);
 
