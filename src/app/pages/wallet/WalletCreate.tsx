@@ -17,7 +17,7 @@ import { useWallet } from '../../hooks/wallet';
 import { AxiosError } from 'axios';
 
 interface FileWithUri {
-  uri: string;
+  uri: string | undefined;
   name: string;
   type: string;
 }

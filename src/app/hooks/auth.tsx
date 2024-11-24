@@ -53,22 +53,22 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         };
         loadStorageData();
     }, []);
-    
-    
+
+
 
     const signIn = useCallback(async ({ email, password }: Credentials): Promise<number> => {
         setError(null);
         try {
             setLoading(true);
             const response = await api.post(`/api/user/auth`, { email, password });
-    
+
             if (response.status === 200 || response.status === 201) {
                 const { access_token } = response.data;
                 await AsyncStorage.setItem('@docs:token', access_token);
-    
+
                 setData({ token: access_token });
                 setCachedCredentials({ email, password });
-                setIsLoggedIn(true); 
+                setIsLoggedIn(true);
                 return response.status;
             } else {
                 throw new Error('Falha na autenticação.');
@@ -85,7 +85,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setLoading(false);
         }
     }, []);
-    
+
 
     const signUp = useCallback(async ({ name, document, email, password }: { name: string; document: string; email: string; password: string; }): Promise<number> => {
         setError(null);
@@ -118,6 +118,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const signOut = useCallback(async () => {
         await AsyncStorage.removeItem('@docs:token');
+        await AsyncStorage.removeItem("@validatedDocuments")
+        await AsyncStorage.removeItem("@webImages");
+        await AsyncStorage.removeItem("@invalidDocuments");
         setData({} as AuthState);
         setIsLoggedIn(false);
     }, []);
