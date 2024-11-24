@@ -13,7 +13,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
-import { useWallet } from '../../hooks/wallet';
+import { useNavigation } from '@react-navigation/native';
 
 const FolderList: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -21,26 +21,29 @@ const FolderList: React.FC = () => {
   const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [viewMode, setViewMode] = useState<'qrcode' | 'document'>('qrcode');
+  const [downloadedDocuments, setDownloadedDocuments] = useState<any[]>([]);
+  const navigation = useNavigation();
 
-  const { getValidatedDocuments } = useWallet();
-  const [validatedDocuments, setValidatedDocuments] = useState<any[]>([]);
-
-  const fetchValidatedDocuments = async () => {
+  const fetchDownloadedDocuments = async () => {
     try {
       setLoading(true);
       const storedData = await AsyncStorage.getItem('@validatedDocuments');
       const documents = storedData ? JSON.parse(storedData) : [];
-      setValidatedDocuments(documents);
+      if (documents.length === 0) {
+        navigation.navigate('ExibirDocumentos'); // Redireciona para a página de exibição
+      } else {
+        setDownloadedDocuments(documents);
+      }
     } catch (err) {
-      console.error('Erro ao carregar documentos validados:', err);
-      setError('Erro ao carregar documentos validados.');
+      console.error('Erro ao carregar documentos baixados:', err);
+      setError('Erro ao carregar documentos baixados.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchValidatedDocuments();
+    fetchDownloadedDocuments();
   }, []);
 
   const handleDocumentClick = (document: any) => {
@@ -53,7 +56,7 @@ const FolderList: React.FC = () => {
     return uri.startsWith('file://') ? uri : `file://${uri}`;
   };
 
-  const renderValidatedItem = ({ item }: { item: any }) => (
+  const renderDownloadedItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.documentItem}
       onPress={() => handleDocumentClick(item)}
@@ -63,14 +66,7 @@ const FolderList: React.FC = () => {
       </View>
       <View style={styles.documentInfo}>
         <Text style={styles.documentName}>{item.documentName}</Text>
-        <Text
-          style={[
-            styles.documentStatus,
-            { color: item.message.includes('válida') ? '#28a745' : '#dc3545' },
-          ]}
-        >
-          {item.message}
-        </Text>
+        <Text style={styles.documentStatus}>{item.message}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -91,20 +87,12 @@ const FolderList: React.FC = () => {
     );
   }
 
-  if (validatedDocuments.length === 0) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.emptyText}>Nenhum documento validado encontrado.</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Documentos Validados</Text>
+      <Text style={styles.header}>Documentos Baixados</Text>
       <FlatList
-        data={validatedDocuments}
-        renderItem={renderValidatedItem}
+        data={downloadedDocuments}
+        renderItem={renderDownloadedItem}
         keyExtractor={(item, index) => `${item.id}-${index}`}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
@@ -121,7 +109,7 @@ const FolderList: React.FC = () => {
               <View style={styles.modalBody}>
                 {viewMode === 'qrcode' ? (
                   <QRCode
-                    value={`Documento: ${selectedDocument.documentName}\nStatus: ${selectedDocument.message}`}
+                    value={`Documento: ${selectedDocument.documentName}\nStatus: ${selectedDocument.message}\nHash: ${selectedDocument.hash}\nHash RSA: ${selectedDocument.hashRsa}\nPublic Key: ${selectedDocument.publicKey}`}
                     size={150}
                     color="black"
                     backgroundColor="white"

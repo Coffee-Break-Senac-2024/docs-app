@@ -12,7 +12,7 @@ import { useWallet } from '../../hooks/wallet';
 import Toast from 'react-native-toast-message';
 
 const WalletDisplay: React.FC = () => {
-  const { getDocuments, downloadAndSaveDocument, validateOfflineDocument } = useWallet();
+  const { getDocuments, downloadAndSaveDocument } = useWallet();
   const [loading, setLoading] = useState(true);
   const [localDocuments, setLocalDocuments] = useState<any[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -69,25 +69,6 @@ const WalletDisplay: React.FC = () => {
     }
   };
 
-  // Função para validar documentos
-  const handleValidate = async (documentId: string, documentName: string) => {
-    setLoadingButtons((prev) => ({ ...prev, [documentId]: true }));
-    try {
-      const validationMessage = await validateOfflineDocument(documentId);
-
-      if (validationMessage) {
-        showToast('success', 'Validação Concluída', `O documento "${documentName}" foi validado: ${validationMessage}`);
-      } else {
-        showToast('error', 'Erro', 'Não foi possível validar o documento.');
-      }
-    } catch (error) {
-      console.error('Erro ao validar documento:', error);
-      showToast('error', 'Erro', 'Houve um problema ao validar o documento.');
-    } finally {
-      setLoadingButtons((prev) => ({ ...prev, [documentId]: false }));
-    }
-  };
-
   // Renderização da tela com base no estado
   if (loading) {
     return (
@@ -134,20 +115,12 @@ const WalletDisplay: React.FC = () => {
               {loadingButtons[item.id] ? (
                 <ActivityIndicator size="small" color="#007BFF" />
               ) : (
-                <>
-                  <TouchableOpacity
-                    style={styles.downloadButton}
-                    onPress={() => handleDownload(item.id, item.documentName)}
-                  >
-                    <Text style={styles.downloadButtonText}>Baixar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.validateButton}
-                    onPress={() => handleValidate(item.id, item.documentName)}
-                  >
-                    <Text style={styles.validateButtonText}>Validar</Text>
-                  </TouchableOpacity>
-                </>
+                <TouchableOpacity
+                  style={styles.downloadButton}
+                  onPress={() => handleDownload(item.id, item.documentName)}
+                >
+                  <Text style={styles.downloadButtonText}>Baixar</Text>
+                </TouchableOpacity>
               )}
             </View>
           </View>
@@ -223,29 +196,15 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     marginTop: 10,
   },
   downloadButton: {
     flex: 1,
-    marginRight: 5,
     paddingVertical: 10,
     backgroundColor: '#007BFF',
     borderRadius: 5,
   },
   downloadButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  validateButton: {
-    flex: 1,
-    marginLeft: 5,
-    paddingVertical: 10,
-    backgroundColor: '#28a745',
-    borderRadius: 5,
-  },
-  validateButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
