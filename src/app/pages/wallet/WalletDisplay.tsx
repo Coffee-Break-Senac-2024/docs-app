@@ -18,7 +18,6 @@ const WalletDisplay: React.FC = () => {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [loadingButtons, setLoadingButtons] = useState<{ [key: string]: boolean }>({});
 
-  // Função para buscar documentos na API
   const fetchDocuments = async () => {
     try {
       setLoading(true);
@@ -41,7 +40,6 @@ const WalletDisplay: React.FC = () => {
     fetchDocuments();
   }, []);
 
-  // Função para exibir mensagens de notificação
   const showToast = (type: 'success' | 'error', title: string, message: string) => {
     Toast.show({
       type,
@@ -50,14 +48,13 @@ const WalletDisplay: React.FC = () => {
     });
   };
 
-  // Função para baixar documentos
   const handleDownload = async (documentId: string, documentName: string) => {
     setLoadingButtons((prev) => ({ ...prev, [documentId]: true }));
     try {
       const downloadMessage = await downloadAndSaveDocument(documentId, documentName);
 
       if (downloadMessage) {
-        showToast('success', 'Download Concluído', `O documento "${documentName}" foi baixado com sucesso.`);
+        showToast('success', 'Download Concluído', downloadMessage);
       } else {
         showToast('error', 'Erro', 'Não foi possível baixar o documento.');
       }
@@ -69,7 +66,6 @@ const WalletDisplay: React.FC = () => {
     }
   };
 
-  // Renderização da tela com base no estado
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -100,7 +96,6 @@ const WalletDisplay: React.FC = () => {
     );
   }
 
-  // Renderização da lista de documentos
   return (
     <View style={styles.container}>
       <Text style={styles.headerText}>Documentos</Text>
@@ -131,7 +126,6 @@ const WalletDisplay: React.FC = () => {
   );
 };
 
-// Estilização
 const styles = StyleSheet.create({
   container: {
     flex: 1,

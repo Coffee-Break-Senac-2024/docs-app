@@ -104,6 +104,15 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
     const downloadAndSaveDocument = async (documentId: string, documentName: string): Promise<string | null> => {
         try {
+
+            const existingDocuments = await AsyncStorage.getItem('@validatedDocuments');
+            const parsedDocuments: ValidatedDocument[] = existingDocuments ? JSON.parse(existingDocuments) : [];
+            const isAlreadyDownloaded = parsedDocuments.some(doc => doc.id === documentId);
+
+            if (isAlreadyDownloaded) {
+                return `O documento "${documentName}" já foi baixado anteriormente.`;
+            }
+
             const token = await getToken();
             if (!token) throw new Error("Token de autenticação não encontrado");
 
