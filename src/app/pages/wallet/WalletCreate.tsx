@@ -45,7 +45,7 @@ const Wallet: React.FC = () => {
         // Abrir galeria
         const { assets, canceled } = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
+            allowsEditing: false,
             base64: false,
             aspect: [4, 4],
             quality: 1,

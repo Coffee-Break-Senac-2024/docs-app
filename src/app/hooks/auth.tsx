@@ -92,17 +92,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             setLoading(true);
             const response = await api.post(`/api/user/create`, { name, document, email, password });
-
-            if (response.status === 200 || response.status === 201) {
-                const { access_token } = response.data;
-                await AsyncStorage.setItem('@docs:token', access_token);
-                setData({ token: access_token });
-                setCachedCredentials({ email, password });
-                setIsLoggedIn(true);
-                return response.status;
-            } else {
-                throw new Error('Erro ao tentar cadastrar.');
-            }
+            console.log(response, 'response')
+            setLoading(false);
+            return response.status;
         } catch (error) {
             if (error instanceof AxiosError) {
                 setError(error.response?.data.message || 'Erro ao cadastrar. Tente novamente.');
